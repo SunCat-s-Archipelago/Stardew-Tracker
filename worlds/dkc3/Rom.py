@@ -434,7 +434,7 @@ level_music_ids = [
     0x21,
 ]
 
-class LocalRom:
+class LocalRom(object):
 
     def __init__(self, file, patch=True, vanillaRom=None, name=None, hash=None):
         self.name = name
@@ -457,7 +457,7 @@ class LocalRom:
     def read_byte(self, address: int) -> int:
         return self.buffer[address]
 
-    def read_bytes(self, startaddress: int, length: int) -> bytearray:
+    def read_bytes(self, startaddress: int, length: int) -> bytes:
         return self.buffer[startaddress:startaddress + length]
 
     def write_byte(self, address: int, value: int):

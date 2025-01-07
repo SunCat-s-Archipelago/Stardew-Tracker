@@ -1,8 +1,8 @@
 from typing import Dict
 
 from . import RLTestBase
-from ..Items import item_table
-from ..Locations import location_table
+from worlds.rogue_legacy.Items import RLItemData, item_table
+from worlds.rogue_legacy.Locations import RLLocationData, location_table
 
 
 class UniqueTest(RLTestBase):

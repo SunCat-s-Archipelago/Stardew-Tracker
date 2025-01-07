@@ -1,6 +1,6 @@
 from typing import List
 
-from BaseClasses import MultiWorld
+from BaseClasses import MultiWorld, ItemClassification
 from .. import DLCQuestTestBase
 from ... import Options
 
@@ -10,11 +10,11 @@ def get_all_item_names(multiworld: MultiWorld) -> List[str]:
 
 
 def get_all_location_names(multiworld: MultiWorld) -> List[str]:
-    return [location.name for location in multiworld.get_locations() if not location.advancement]
+    return [location.name for location in multiworld.get_locations() if not location.event]
 
 
 def assert_victory_exists(tester: DLCQuestTestBase, multiworld: MultiWorld):
-    campaign = multiworld.worlds[1].options.campaign
+    campaign = multiworld.campaign[1]
     all_items = [item.name for item in multiworld.get_items()]
     if campaign == Options.Campaign.option_basic or campaign == Options.Campaign.option_both:
         tester.assertIn("Victory Basic", all_items)
@@ -25,7 +25,7 @@ def assert_victory_exists(tester: DLCQuestTestBase, multiworld: MultiWorld):
 def collect_all_then_assert_can_win(tester: DLCQuestTestBase, multiworld: MultiWorld):
     for item in multiworld.get_items():
         multiworld.state.collect(item)
-    campaign = multiworld.worlds[1].options.campaign
+    campaign = multiworld.campaign[1]
     if campaign == Options.Campaign.option_basic or campaign == Options.Campaign.option_both:
         tester.assertTrue(multiworld.find_item("Victory Basic", 1).can_reach(multiworld.state))
     if campaign == Options.Campaign.option_live_freemium_or_die or campaign == Options.Campaign.option_both:
@@ -38,5 +38,5 @@ def assert_can_win(tester: DLCQuestTestBase, multiworld: MultiWorld):
 
 
 def assert_same_number_items_locations(tester: DLCQuestTestBase, multiworld: MultiWorld):
-    non_event_locations = [location for location in multiworld.get_locations() if not location.advancement]
+    non_event_locations = [location for location in multiworld.get_locations() if not location.event]
     tester.assertEqual(len(multiworld.itempool), len(non_event_locations))

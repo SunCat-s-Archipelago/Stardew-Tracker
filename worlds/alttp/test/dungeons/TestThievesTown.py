@@ -37,8 +37,7 @@ class TestThievesTown(TestDungeon):
 
             ["Thieves' Town - Blind's Cell", False, []],
             ["Thieves' Town - Blind's Cell", False, [], ['Big Key (Thieves Town)']],
-            ["Thieves' Town - Blind's Cell", False, [], ['Small Key (Thieves Town)']],
-            ["Thieves' Town - Blind's Cell", True, ['Big Key (Thieves Town)', 'Small Key (Thieves Town)']],
+            ["Thieves' Town - Blind's Cell", True, ['Big Key (Thieves Town)']],
 
             ["Thieves' Town - Boss", False, []],
             ["Thieves' Town - Boss", False, [], ['Big Key (Thieves Town)']],

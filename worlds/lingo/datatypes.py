@@ -1,4 +1,3 @@
-from enum import Enum, Flag, auto
 from typing import List, NamedTuple, Optional
 
 
@@ -12,34 +11,15 @@ class RoomAndPanel(NamedTuple):
     panel: str
 
 
-class RoomAndPanelDoor(NamedTuple):
-    room: Optional[str]
-    panel_door: str
-
-
-class EntranceType(Flag):
-    NORMAL = auto()
-    PAINTING = auto()
-    SUNWARP = auto()
-    WARP = auto()
-    CROSSROADS_ROOF_ACCESS = auto()
-
-
 class RoomEntrance(NamedTuple):
     room: str  # source room
     door: Optional[RoomAndDoor]
-    type: EntranceType
+    painting: bool
 
 
 class Room(NamedTuple):
     name: str
     entrances: List[RoomEntrance]
-
-
-class DoorType(Enum):
-    NORMAL = 1
-    SUNWARP = 2
-    SUN_PAINTING = 3
 
 
 class Door(NamedTuple):
@@ -54,7 +34,7 @@ class Door(NamedTuple):
     event: bool
     door_group: Optional[str]
     include_reduce: bool
-    type: DoorType
+    junk_item: bool
     item_group: Optional[str]
 
 
@@ -68,13 +48,6 @@ class Panel(NamedTuple):
     exclude_reduce: bool
     achievement: bool
     non_counting: bool
-    panel_door: Optional[RoomAndPanelDoor]  # This will always be fully specified.
-    location_name: Optional[str]
-
-
-class PanelDoor(NamedTuple):
-    item_name: str
-    panel_group: Optional[str]
 
 
 class Painting(NamedTuple):

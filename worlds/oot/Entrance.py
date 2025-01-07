@@ -3,9 +3,9 @@ from BaseClasses import Entrance
 class OOTEntrance(Entrance): 
     game: str = 'Ocarina of Time'
 
-    def __init__(self, player, multiworld, name='', parent=None):
+    def __init__(self, player, world, name='', parent=None): 
         super(OOTEntrance, self).__init__(player, name, parent)
-        self.multiworld = multiworld
+        self.multiworld = world
         self.access_rules = []
         self.reverse = None
         self.replaces = None

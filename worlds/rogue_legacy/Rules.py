@@ -1,13 +1,9 @@
-from BaseClasses import CollectionState
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from . import RLWorld
+from BaseClasses import CollectionState, MultiWorld
 
 
-def get_upgrade_total(world: "RLWorld") -> int:
-    return int(world.options.health_pool) + int(world.options.mana_pool) + \
-           int(world.options.attack_pool) + int(world.options.magic_damage_pool)
+def get_upgrade_total(multiworld: MultiWorld, player: int) -> int:
+    return int(multiworld.health_pool[player]) + int(multiworld.mana_pool[player]) + \
+           int(multiworld.attack_pool[player]) + int(multiworld.magic_damage_pool[player])
 
 
 def get_upgrade_count(state: CollectionState, player: int) -> int:
@@ -23,8 +19,8 @@ def has_upgrade_amount(state: CollectionState, player: int, amount: int) -> bool
     return get_upgrade_count(state, player) >= amount
 
 
-def has_upgrades_percentage(state: CollectionState, world: "RLWorld", percentage: float) -> bool:
-    return has_upgrade_amount(state, world.player, round(get_upgrade_total(world) * (percentage / 100)))
+def has_upgrades_percentage(state: CollectionState, player: int, percentage: float) -> bool:
+    return has_upgrade_amount(state, player, round(get_upgrade_total(state.multiworld, player) * (percentage / 100)))
 
 
 def has_movement_rune(state: CollectionState, player: int) -> bool:
@@ -51,15 +47,15 @@ def has_defeated_dungeon(state: CollectionState, player: int) -> bool:
     return state.has("Defeat Herodotus", player) or state.has("Defeat Astrodotus", player)
 
 
-def set_rules(world: "RLWorld", player: int):
+def set_rules(multiworld: MultiWorld, player: int):
     # If 'vendors' are 'normal', then expect it to show up in the first half(ish) of the spheres.
-    if world.options.vendors == "normal":
-        world.get_location("Forest Abkhazia Boss Reward").access_rule = \
+    if multiworld.vendors[player] == "normal":
+        multiworld.get_location("Forest Abkhazia Boss Reward", player).access_rule = \
             lambda state: has_vendors(state, player)
 
     # Gate each manor location so everything isn't dumped into sphere 1.
     manor_rules = {
-        "Defeat Khidr" if world.options.khidr == "vanilla" else "Defeat Neo Khidr": [
+        "Defeat Khidr" if multiworld.khidr[player] == "vanilla" else "Defeat Neo Khidr": [
             "Manor - Left Wing Window",
             "Manor - Left Wing Rooftop",
             "Manor - Right Wing Window",
@@ -70,7 +66,7 @@ def set_rules(world: "RLWorld", player: int):
             "Manor - Left Tree 2",
             "Manor - Right Tree",
         ],
-        "Defeat Alexander" if world.options.alexander == "vanilla" else "Defeat Alexander IV": [
+        "Defeat Alexander" if multiworld.alexander[player] == "vanilla" else "Defeat Alexander IV": [
             "Manor - Left Big Upper 1",
             "Manor - Left Big Upper 2",
             "Manor - Left Big Windows",
@@ -82,7 +78,7 @@ def set_rules(world: "RLWorld", player: int):
             "Manor - Right Big Rooftop",
             "Manor - Right Extension",
         ],
-        "Defeat Ponce de Leon" if world.options.leon == "vanilla" else "Defeat Ponce de Freon": [
+        "Defeat Ponce de Leon" if multiworld.leon[player] == "vanilla" else "Defeat Ponce de Freon": [
             "Manor - Right High Base",
             "Manor - Right High Upper",
             "Manor - Right High Tower",
@@ -94,24 +90,24 @@ def set_rules(world: "RLWorld", player: int):
     # Set rules for manor locations.
     for event, locations in manor_rules.items():
         for location in locations:
-            world.get_location(location).access_rule = lambda state: state.has(event, player)
+            multiworld.get_location(location, player).access_rule = lambda state: state.has(event, player)
 
     # Set rules for fairy chests to decrease headache of expectation to find non-movement fairy chests.
-    for fairy_location in [location for location in world.multiworld.get_locations(player) if "Fairy" in location.name]:
+    for fairy_location in [location for location in multiworld.get_locations(player) if "Fairy" in location.name]:
         fairy_location.access_rule = lambda state: has_fairy_progression(state, player)
 
     # Region rules.
-    world.get_entrance("Forest Abkhazia").access_rule = \
-        lambda state: has_upgrades_percentage(state, world, 12.5) and has_defeated_castle(state, player)
+    multiworld.get_entrance("Forest Abkhazia", player).access_rule = \
+        lambda state: has_upgrades_percentage(state, player, 12.5) and has_defeated_castle(state, player)
 
-    world.get_entrance("The Maya").access_rule = \
-        lambda state: has_upgrades_percentage(state, world, 25) and has_defeated_forest(state, player)
+    multiworld.get_entrance("The Maya", player).access_rule = \
+        lambda state: has_upgrades_percentage(state, player, 25) and has_defeated_forest(state, player)
 
-    world.get_entrance("Land of Darkness").access_rule = \
-        lambda state: has_upgrades_percentage(state, world, 37.5) and has_defeated_tower(state, player)
+    multiworld.get_entrance("Land of Darkness", player).access_rule = \
+        lambda state: has_upgrades_percentage(state, player, 37.5) and has_defeated_tower(state, player)
 
-    world.get_entrance("The Fountain Room").access_rule = \
-        lambda state: has_upgrades_percentage(state, world, 50) and has_defeated_dungeon(state, player)
+    multiworld.get_entrance("The Fountain Room", player).access_rule = \
+        lambda state: has_upgrades_percentage(state, player, 50) and has_defeated_dungeon(state, player)
 
     # Win condition.
-    world.multiworld.completion_condition[player] = lambda state: state.has("Defeat The Fountain", player)
+    multiworld.completion_condition[player] = lambda state: state.has("Defeat The Fountain", player)

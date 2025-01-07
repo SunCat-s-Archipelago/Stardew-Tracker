@@ -604,8 +604,7 @@ regions:List[RegionDict] = [
      "connections":[
         {"target":"Ambulatory (E4M3) Blue","pro":False},
         {"target":"Ambulatory (E4M3) Yellow","pro":False},
-        {"target":"Ambulatory (E4M3) Green","pro":False},
-        {"target":"Ambulatory (E4M3) Green Lock","pro":False}]},
+        {"target":"Ambulatory (E4M3) Green","pro":False}]},
     {"name":"Ambulatory (E4M3) Blue",
      "connects_to_hub":False,
      "episode":4,
@@ -620,12 +619,6 @@ regions:List[RegionDict] = [
      "connects_to_hub":False,
      "episode":4,
      "connections":[{"target":"Ambulatory (E4M3) Main","pro":False}]},
-    {"name":"Ambulatory (E4M3) Green Lock",
-     "connects_to_hub":False,
-     "episode":4,
-     "connections":[
-        {"target":"Ambulatory (E4M3) Green","pro":False},
-        {"target":"Ambulatory (E4M3) Main","pro":False}]},
 
     # Sepulcher (E4M4)
     {"name":"Sepulcher (E4M4) Main",
@@ -774,7 +767,9 @@ regions:List[RegionDict] = [
     {"name":"Quay (E5M3) Blue",
      "connects_to_hub":False,
      "episode":5,
-     "connections":[{"target":"Quay (E5M3) Main","pro":False}]},
+     "connections":[
+        {"target":"Quay (E5M3) Green","pro":False},
+        {"target":"Quay (E5M3) Main","pro":False}]},
     {"name":"Quay (E5M3) Yellow",
      "connects_to_hub":False,
      "episode":5,
@@ -784,11 +779,7 @@ regions:List[RegionDict] = [
      "episode":5,
      "connections":[
         {"target":"Quay (E5M3) Main","pro":False},
-        {"target":"Quay (E5M3) Cyan","pro":False}]},
-    {"name":"Quay (E5M3) Cyan",
-     "connects_to_hub":False,
-     "episode":5,
-     "connections":[{"target":"Quay (E5M3) Main","pro":False}]},
+        {"target":"Quay (E5M3) Blue","pro":False}]},
 
     # Courtyard (E5M4)
     {"name":"Courtyard (E5M4) Main",

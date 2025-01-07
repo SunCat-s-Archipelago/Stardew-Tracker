@@ -32,7 +32,8 @@ class YoshisIslandWeb(WebWorld):
 
     setup_en = Tutorial(
         "Multiworld Setup Guide",
-        "A guide to setting up the Yoshi's Island randomizer and connecting to an Archipelago server.",
+        "A guide to setting up the Yoshi's Island randomizer"
+        "and connecting to an Archipelago server.",
         "English",
         "setup_en.md",
         "setup/en",

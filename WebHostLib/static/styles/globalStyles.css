@@ -44,7 +44,7 @@ a{
     font-family: LexendDeca-Regular, sans-serif;
 }
 
-button, input[type=submit]{
+button{
     font-weight: 500;
     font-size: 0.9rem;
     padding: 10px 17px 11px 16px; /* top right bottom left */
@@ -57,7 +57,7 @@ button, input[type=submit]{
     cursor: pointer;
 }
 
-button:active, input[type=submit]:active{
+button:active{
     border-right: 1px solid rgba(0, 0, 0, 0.5);
     border-bottom: 1px solid rgba(0, 0, 0, 0.5);
     padding-right: 16px;
@@ -66,11 +66,11 @@ button:active, input[type=submit]:active{
     margin-bottom: 2px;
 }
 
-button.button-grass, input[type=submit].button-grass{
+button.button-grass{
     border: 1px solid black;
 }
 
-button.button-dirt, input[type=submit].button-dirt{
+button.button-dirt{
     border: 1px solid black;
 }
 

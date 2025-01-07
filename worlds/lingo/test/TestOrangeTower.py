@@ -3,7 +3,7 @@ from . import LingoTestBase
 
 class TestProgressiveOrangeTower(LingoTestBase):
     options = {
-        "shuffle_doors": "doors",
+        "shuffle_doors": "complex",
         "progressive_orange_tower": "true"
     }
 

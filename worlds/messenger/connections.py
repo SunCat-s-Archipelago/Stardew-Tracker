@@ -1,4 +1,6 @@
-CONNECTIONS: dict[str, dict[str, list[str]]] = {
+from typing import Dict, List
+
+CONNECTIONS: Dict[str, Dict[str, List[str]]] = {
     "Ninja Village": {
         "Right": [
             "Autumn Hills - Left",
@@ -112,6 +114,7 @@ CONNECTIONS: dict[str, dict[str, list[str]]] = {
             "Forlorn Temple - Rocket Maze Checkpoint",
         ],
         "Rocket Maze Checkpoint": [
+            "Forlorn Temple - Sunny Day Checkpoint",
             "Forlorn Temple - Climb Shop",
         ],
     },
@@ -564,15 +567,6 @@ CONNECTIONS: dict[str, dict[str, list[str]]] = {
             "Elemental Skylands - Earth Generator Shop",
         ],
         "Earth Generator Shop": [
-            "Elemental Skylands - Water Shmup",
-        ],
-        "Water Shmup": [
-            "Elemental Skylands - Water Intro Shop",
-        ],
-        "Water Intro Shop": [
-            "Elemental Skylands - Water Generator Shop",
-        ],
-        "Water Generator Shop": [
             "Elemental Skylands - Fire Shmup",
         ],
         "Fire Shmup": [
@@ -582,6 +576,15 @@ CONNECTIONS: dict[str, dict[str, list[str]]] = {
             "Elemental Skylands - Fire Generator Shop",
         ],
         "Fire Generator Shop": [
+            "Elemental Skylands - Water Shmup",
+        ],
+        "Water Shmup": [
+            "Elemental Skylands - Water Intro Shop",
+        ],
+        "Water Intro Shop": [
+            "Elemental Skylands - Water Generator Shop",
+        ],
+        "Water Generator Shop": [
             "Elemental Skylands - Right",
         ],
         "Right": [
@@ -638,7 +641,7 @@ CONNECTIONS: dict[str, dict[str, list[str]]] = {
     },
 }
 
-RANDOMIZED_CONNECTIONS: dict[str, str] = {
+RANDOMIZED_CONNECTIONS: Dict[str, str] = {
     "Ninja Village - Right": "Autumn Hills - Left",
     "Autumn Hills - Left": "Ninja Village - Right",
     "Autumn Hills - Right": "Forlorn Temple - Left",
@@ -678,7 +681,7 @@ RANDOMIZED_CONNECTIONS: dict[str, str] = {
     "Sunken Shrine - Left": "Howling Grotto - Bottom",
 }
 
-TRANSITIONS: list[str] = [
+TRANSITIONS: List[str] = [
     "Ninja Village - Right",
     "Autumn Hills - Left",
     "Autumn Hills - Right",

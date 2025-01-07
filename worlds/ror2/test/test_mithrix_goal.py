@@ -3,9 +3,7 @@ from . import RoR2TestBase
 
 class MithrixGoalTest(RoR2TestBase):
     options = {
-        "victory": "mithrix",
-        "require_stages": "true",
-        "progressive_stages": "false"
+        "victory": "mithrix"
     }
 
     def test_mithrix(self) -> None:

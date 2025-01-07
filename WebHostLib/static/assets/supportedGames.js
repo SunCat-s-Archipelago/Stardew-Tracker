@@ -1,16 +1,18 @@
 window.addEventListener('load', () => {
   // Add toggle listener to all elements with .collapse-toggle
-  const toggleButtons = document.querySelectorAll('details');
+  const toggleButtons = document.querySelectorAll('.collapse-toggle');
+  toggleButtons.forEach((e) => e.addEventListener('click', toggleCollapse));
 
   // Handle game filter input
   const gameSearch = document.getElementById('game-search');
   gameSearch.value = '';
   gameSearch.addEventListener('input', (evt) => {
     if (!evt.target.value.trim()) {
-      // If input is empty, display all games as collapsed
+      // If input is empty, display all collapsed games
       return toggleButtons.forEach((header) => {
         header.style.display = null;
-        header.removeAttribute('open');
+        header.firstElementChild.innerText = '▶';
+        header.nextElementSibling.classList.add('collapsed');
       });
     }
 
@@ -19,10 +21,12 @@ window.addEventListener('load', () => {
       // If the game name includes the search string, display the game. If not, hide it
       if (header.getAttribute('data-game').toLowerCase().includes(evt.target.value.toLowerCase())) {
         header.style.display = null;
-        header.setAttribute('open', '1');
+        header.firstElementChild.innerText = '▼';
+        header.nextElementSibling.classList.remove('collapsed');
       } else {
         header.style.display = 'none';
-        header.removeAttribute('open');
+        header.firstElementChild.innerText = '▶';
+        header.nextElementSibling.classList.add('collapsed');
       }
     });
   });
@@ -31,14 +35,30 @@ window.addEventListener('load', () => {
   document.getElementById('collapse-all').addEventListener('click', collapseAll);
 });
 
+const toggleCollapse = (evt) => {
+  const gameArrow = evt.target.firstElementChild;
+  const gameInfo = evt.target.nextElementSibling;
+  if (gameInfo.classList.contains('collapsed')) {
+    gameArrow.innerText = '▼';
+    gameInfo.classList.remove('collapsed');
+  } else {
+    gameArrow.innerText = '▶';
+    gameInfo.classList.add('collapsed');
+  }
+};
+
 const expandAll = () => {
-  document.querySelectorAll('details').forEach((detail) => {
-    detail.setAttribute('open', '1');
+  document.querySelectorAll('.collapse-toggle').forEach((header) => {
+    if (header.style.display === 'none') { return; }
+    header.firstElementChild.innerText = '▼';
+    header.nextElementSibling.classList.remove('collapsed');
   });
 };
 
 const collapseAll = () => {
-  document.querySelectorAll('details').forEach((detail) => {
-    detail.removeAttribute('open');
+  document.querySelectorAll('.collapse-toggle').forEach((header) => {
+    if (header.style.display === 'none') { return; }
+    header.firstElementChild.innerText = '▶';
+    header.nextElementSibling.classList.add('collapsed');
   });
 };

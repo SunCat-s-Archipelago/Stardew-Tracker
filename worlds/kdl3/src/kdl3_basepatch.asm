@@ -58,10 +58,6 @@ org $01AFC8
 org $01B013
     SEC ; Remove Dedede Bad Ending
 
-org $01B050
-    JSL HookBossPurify
-    NOP
-
 org $02B7B0 ; Zero unlock
     LDA $80A0
     CMP #$0001
@@ -164,6 +160,7 @@ CopyAbilityAnimalOverride:
     STA $39DF, X
     RTL
 
+org $079A00
 HeartStarCheck:
     TXA
     CMP #$0000 ; is this level 1
@@ -204,6 +201,7 @@ HeartStarCheck:
     SEC
     RTL
 
+org $079A80
 OpenWorldUnlock:
     PHX
     LDX $900E ; Are we on open world?
@@ -226,6 +224,7 @@ OpenWorldUnlock:
     PLX
     RTL
 
+org $079B00
 MainLoopHook:
     STA $D4
     INC $3524
@@ -240,18 +239,16 @@ MainLoopHook:
     BEQ .Return ; return if we are
     LDA $5541 ; gooey status
     BPL .Slowness ; gooey is already spawned
-    LDA $39D1 ; is kirby alive?
-    BEQ .Slowness ; branch if he isn't
-    ; maybe BMI here too?
     LDA $8080
     CMP #$0000 ; did we get a gooey trap
     BEQ .Slowness ; branch if we did not
     JSL GooeySpawn
-    DEC $8080
+    STZ $8080
     .Slowness:
     LDA $8082 ; slowness
     BEQ .Eject ; are we under the effects of a slowness trap
-    DEC $8082 ; dec by 1 each frame
+    DEC
+    STA $8082 ; dec by 1 each frame
     .Eject:
     PHX
     PHY
@@ -261,13 +258,14 @@ MainLoopHook:
     BEQ .PullVars ; branch if we haven't received eject
     LDA #$2000 ; select button press
     STA $60C1 ; write to controller mirror
-    DEC $8084
+    STZ $8084
     .PullVars:
     PLY
     PLX
     .Return:
     RTL
 
+org $079B80
 HeartStarGraphicFix:
     LDA #$0000
     PHX
@@ -290,7 +288,7 @@ HeartStarGraphicFix:
     ASL
     TAX
     LDA $07D080, X ; table of original stage number
-    CMP #$0002 ; is the current stage a minigame stage?
+    CMP #$0003 ; is the current stage a minigame stage?
     BEQ .ReturnTrue ; branch if so
     CLC
     BRA .Return
@@ -301,6 +299,7 @@ HeartStarGraphicFix:
     PLX
     RTL
 
+org $079BF0
 ParseItemQueue:
 ; Local item queue parsing
     NOP
@@ -337,6 +336,8 @@ ParseItemQueue:
     AND #$000F
     ASL
     TAY
+    LDA $8080,Y
+    BNE .LoopCheck
     JSL .ApplyNegative
     RTL
     .ApplyAbility:
@@ -417,73 +418,35 @@ ParseItemQueue:
     CPY #$0005
     BCS .PlayNone
     LDA $8080,Y
-    CPY #$0002
-    BNE .Increment
-    CLC
+    BNE .Return
     LDA #$0384
-    ADC $8080, Y
-    BVC .PlayNegative
-    LDA #$FFFF
-    .PlayNegative:
     STA $8080,Y
     LDA #$00A7
     BRA .PlaySFXLong
-    .Increment:
-    INC
-    STA $8080, Y
-    BRA .PlayNegative
     .PlayNone:
     LDA #$0000
     BRA .PlaySFXLong
 
+org $079D00
 AnimalFriendSpawn:
     PHA
     CPX #$0002  ; is this an animal friend?
     BNE .Return
     XBA
     PHA
-    PHX
-    PHA
-    LDX #$0000
-    .CheckSpawned:
-    LDA $05CA, X
-    BNE .Continue
-    LDA #$0002
-    CMP $074A, X
-    BNE .ContinueCheck
-    PLA
-    PHA
-    XBA
-    CMP $07CA, X
-    BEQ .AlreadySpawned
-    .ContinueCheck:
-    INX
-    INX
-    BRA .CheckSpawned
-    .Continue:
-    PLA
-    PLX
     ASL
     TAY
     PLA
     INC
     CMP $8000, Y ; do we have this animal friend
     BEQ .Return ; we have this animal friend
-    .False:
     INX
     .Return:
     PLY
     LDA #$9999
     RTL
-    .AlreadySpawned:
-    PLA
-    PLX
-    ASL
-    TAY
-    PLA
-    BRA .False
 
-
+org $079E00
 WriteBWRAM:
     LDY #$6001 ;starting addr
     LDA #$1FFE ;bytes to write
@@ -516,6 +479,7 @@ WriteBWRAM:
     .Return:
     RTL
 
+org $079E80
 ConsumableSet:
     PHA
     PHX
@@ -543,6 +507,7 @@ ConsumableSet:
     ASL
     TAX
     LDA $07D020, X ; current stage
+    DEC
     ASL #6
     TAX
     PLA
@@ -554,16 +519,8 @@ ConsumableSet:
     BRA .LoopHead ; return to loop head
     .ApplyCheck:
     LDA $A000, X ; consumables index
-    PHA
     ORA #$0001
     STA $A000, X
-    PLA
-    AND #$00FF
-    BNE .Return
-    TXA
-    ORA #$1000
-    JSL ApplyLocalCheck
-    .Return:
     PLY
     PLX
     PLA
@@ -571,6 +528,7 @@ ConsumableSet:
     AND #$00FF
     RTL
 
+org $079F00
 NormalGoalSet:
     PHX
     LDA $07D012
@@ -591,6 +549,7 @@ NormalGoalSet:
     STA $5AC1 ; cutscene
     RTL
 
+org $079F80
 FinalIcebergFix:
     PHX
     PHY
@@ -613,7 +572,7 @@ FinalIcebergFix:
     ASL
     TAX
     LDA $07D020, X
-    CMP #$001D
+    CMP #$001E
     BEQ .ReturnTrue
     CLC
     BRA .Return
@@ -624,6 +583,7 @@ FinalIcebergFix:
     PLX
     RTL
 
+org $07A000
 StrictBosses:
     PHX
     LDA $901E ; Do we have strict bosses enabled?
@@ -650,6 +610,7 @@ StrictBosses:
     LDA $53CD
     RTL
 
+org $07A030
 NintenHalken:
     LDX #$0005
     .Halken:
@@ -667,6 +628,7 @@ NintenHalken:
     LDA #$0001
     RTL
 
+org $07A080
 StageCompleteSet:
     PHX
     LDA $5AC1 ; completed stage cutscene
@@ -694,17 +656,9 @@ StageCompleteSet:
     ASL
     TAX
     LDA $9020, X ; load the stage we completed
+    DEC
     ASL
     TAX
-    PHX
-    LDA $8200, X
-    AND #$00FF
-    BNE .ApplyClear
-    TXA
-    LSR
-    JSL ApplyLocalCheck
-    .ApplyClear:
-    PLX
     LDA #$0001
     ORA $8200, X
     STA $8200, X
@@ -714,6 +668,7 @@ StageCompleteSet:
     CMP $53CB
     RTL
 
+org $07A100
 OpenWorldBossUnlock:
     PHX
     PHY
@@ -744,6 +699,7 @@ OpenWorldBossUnlock:
     .LoopStage:
     PLX
     LDY $9020, X ; get stage id
+    DEY
     INX
     INX
     PHA
@@ -776,6 +732,7 @@ OpenWorldBossUnlock:
     PLX
     RTL
 
+org $07A180
 GooeySpawn:
     PHY 
     PHX 
@@ -811,6 +768,7 @@ GooeySpawn:
     PLY 
     RTL 
 
+org $07A200
 SpeedTrap:
     PHX
     LDX $8082 ; do we have slowness
@@ -822,6 +780,7 @@ SpeedTrap:
     EOR #$FFFF
     RTL
 
+org $07A280
 HeartStarVisual:
     CPX #$0000
     BEQ .SkipInx
@@ -885,6 +844,7 @@ HeartStarVisual:
     .Return:
     RTL
 
+org $07A300
 LoadFont:
     JSL $00D29F ; play sfx
     PHX
@@ -955,6 +915,7 @@ LoadFont:
     PLX
     RTL
 
+org $07A380
 HeartStarVisual2:
     LDA #$2C80
     STA $0000, Y
@@ -1068,12 +1029,14 @@ HeartStarVisual2:
     STA $0000, Y
     RTL
 
+org $07A480
 HeartStarSelectFix:
     PHX
     TXA
     ASL
     TAX
     LDA $9020, X
+    DEC
     TAX
     .LoopHead:
     CMP #$0006
@@ -1088,31 +1051,15 @@ HeartStarSelectFix:
     AND #$00FF
     RTL
 
+org $07A500
 HeartStarCutsceneFix:
     TAX
     LDA $53D3
     DEC
     STA $5AC3
-    LDA $53A7, X
-    AND #$00FF
-    BNE .Return
-    PHX
-    TXA
-    .Loop:
-    CMP #$0007
-    BCC .Continue
-    SEC
-    SBC #$0007
-    DEX
-    BRA .Loop
-    .Continue:
-    TXA
-    ORA #$0100
-    JSL ApplyLocalCheck
-    PLX
-    .Return
     RTL
 
+org $07A510
 GiftGiving:
     CMP #$0008
     .This:
@@ -1128,6 +1075,7 @@ GiftGiving:
     PLX
     JML $CABC18
 
+org $07A550
 PauseMenu:
     JSL $00D29F
     PHX
@@ -1188,6 +1136,7 @@ PauseMenu:
     PLX
     RTL
 
+org $07A600
 StarsSet:
     PHA
     PHX
@@ -1217,6 +1166,7 @@ StarsSet:
     ASL
     TAX
     LDA $07D020, X
+    DEC
     ASL
     ASL
     ASL
@@ -1233,15 +1183,8 @@ StarsSet:
     BRA .2LoopHead
     .2LoopEnd:
     LDA $B000, X
-    PHA
     ORA #$0001
     STA $B000, X
-    PLA
-    AND #$00FF
-    BNE .Return
-    TXA
-    ORA #$2000
-    JSL ApplyLocalCheck
     .Return:
     PLY
     PLX
@@ -1256,48 +1199,6 @@ StarsSet:
     STA $39D7
     BRA .Return
 
-ApplyLocalCheck:
-; args: A-address of check following $08B000
-    TAX
-    LDA $09B000, X
-    AND #$00FF
-    TAY
-    LDX #$0000
-    .Loop:
-    LDA $C000, X
-    BEQ .Apply
-    INX
-    INX
-    CPX #$0010
-    BCC .Loop
-    BRA .Return ; this is dangerous, could lose a check here
-    .Apply:
-    TYA
-    STA $C000, X
-    .Return:
-    RTL
-
-HookBossPurify:
-    ORA $B0
-    STA $53D5
-    LDA $B0
-    LDX #$0000
-    LSR
-    .Loop:
-    BIT #$0001
-    BNE .Apply
-    LSR
-    LSR
-    INX
-    CPX #$0005
-    BCS .Return
-    BRA .Loop
-    .Apply:
-    TXA
-    ORA #$0200
-    JSL ApplyLocalCheck
-    .Return:
-    RTL
 
 org $07C000
     db "KDL3_BASEPATCH_ARCHI"
@@ -1334,6 +1235,3 @@ org $07E040
     db $3B, $05
     db $3C, $05
     db $3D, $05
-
-org $07F000
-incbin "APPauseIcons.dat"

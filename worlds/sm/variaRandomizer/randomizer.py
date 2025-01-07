@@ -250,13 +250,13 @@ class VariaRandomizer:
     parser.add_argument('--tourianList', help="list to choose from when random",
                         dest='tourianList', nargs='?', default=None)
 
-    def __init__(self, options, rom, player):
+    def __init__(self, world, rom, player):
         # parse args       
         self.args = copy.deepcopy(VariaRandomizer.parser.parse_args(["--logic", "varia"])) #dummy custom args to skip parsing _sys.argv while still get default values
         self.player = player
         args = self.args
         args.rom = rom
-        # args.startLocation = to_pascal_case_with_space(options.startLocation.current_key)
+        # args.startLocation = to_pascal_case_with_space(world.startLocation[player].current_key)
 
         if args.output is None and args.rom is None:
             raise Exception("Need --output or --rom parameter")
@@ -288,7 +288,7 @@ class VariaRandomizer:
                 # print(msg)
                 # optErrMsgs.append(msg)
 
-        preset = loadRandoPreset(options, args)
+        preset = loadRandoPreset(world, self.player, args)
         # use the skill preset from the rando preset
         if preset is not None and preset != 'custom' and preset != 'varia_custom' and args.paramsFileName is None:
             args.paramsFileName = "/".join((appDir, getPresetDir(preset), preset+".json"))
@@ -302,12 +302,12 @@ class VariaRandomizer:
                 preset = args.preset
         else:
             if preset == 'custom':
-                PresetLoader.factory(options.custom_preset.value).load(self.player)
+                PresetLoader.factory(world.custom_preset[player].value).load(self.player)
             elif preset == 'varia_custom':
-                if len(options.varia_custom_preset.value) == 0:
+                if len(world.varia_custom_preset[player].value) == 0:
                     raise Exception("varia_custom was chosen but varia_custom_preset is missing.")
                 url = 'https://randommetroidsolver.pythonanywhere.com/presetWebService'
-                preset_name = next(iter(options.varia_custom_preset.value))
+                preset_name = next(iter(world.varia_custom_preset[player].value))
                 payload = '{{"preset": "{}"}}'.format(preset_name)
                 headers = {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'}
                 response = requests.post(url, data=payload, headers=headers)
@@ -463,7 +463,7 @@ class VariaRandomizer:
                 args.startLocation = random.choice(possibleStartAPs)
             elif args.startLocation not in possibleStartAPs:
                 args.startLocation = 'Landing Site'
-                options.start_location = StartLocation(StartLocation.default)
+                world.start_location[player] = StartLocation(StartLocation.default)
                 #optErrMsgs.append('Invalid start location: {}.  {}'.format(args.startLocation, reasons[args.startLocation]))
                 #optErrMsgs.append('Possible start locations with these settings: {}'.format(possibleStartAPs))
                 #dumpErrorMsgs(args.output, optErrMsgs)

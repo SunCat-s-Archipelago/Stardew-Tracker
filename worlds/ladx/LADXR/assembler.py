@@ -757,7 +757,7 @@ class Assembler:
 
 def const(name: str, value: int) -> None:
     name = name.upper()
-    assert name not in CONST_MAP or CONST_MAP[name] == value
+    assert name not in CONST_MAP
     CONST_MAP[name] = value
 
 

@@ -1,5 +1,5 @@
-from test.bases import TestBase, WorldTestBase
-from .. import MinecraftWorld, MinecraftOptions
+from test.TestBase import TestBase, WorldTestBase
+from .. import MinecraftWorld
 
 
 class MCTestBase(WorldTestBase, TestBase):

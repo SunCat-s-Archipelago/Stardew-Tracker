@@ -1,5 +1,6 @@
 # text details: https://wiki.cloudmodding.com/oot/Text_Format
 
+import random
 from .HintList import misc_item_hint_table, misc_location_hint_table
 from .TextBox import line_wrap
 from .Utils import find_last
@@ -968,7 +969,7 @@ def repack_messages(rom, messages, permutation=None, always_allow_skip=True, spe
     rom.write_bytes(entry_offset, [0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
 
 # shuffles the messages in the game, making sure to keep various message types in their own group
-def shuffle_messages(messages, rand, except_hints=True, always_allow_skip=True):
+def shuffle_messages(messages, except_hints=True, always_allow_skip=True):
 
     permutation = [i for i, _ in enumerate(messages)]
 
@@ -1001,7 +1002,7 @@ def shuffle_messages(messages, rand, except_hints=True, always_allow_skip=True):
 
     def shuffle_group(group):
         group_permutation = [i for i, _ in enumerate(group)]
-        rand.shuffle(group_permutation)
+        random.shuffle(group_permutation)
 
         for index_from, index_to in enumerate(group_permutation):
             permutation[group[index_to].index] = group[index_from].index

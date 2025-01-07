@@ -98,23 +98,15 @@
                             <td>
                                 {% if hint.finding_player == player %}
                                     <b>{{ player_names_with_alias[(team, hint.finding_player)] }}</b>
-                                {% elif get_slot_info(team, hint.finding_player).type == 2 %}
-                                    <i>{{ player_names_with_alias[(team, hint.finding_player)] }}</i>
                                 {% else %}
-                                    <a href="{{ url_for("get_player_tracker", tracker=room.tracker, tracked_team=team, tracked_player=hint.finding_player) }}">
-                                        {{ player_names_with_alias[(team, hint.finding_player)] }}
-                                    </a>
+                                    {{ player_names_with_alias[(team, hint.finding_player)] }}
                                 {% endif %}
                             </td>
                             <td>
                                 {% if hint.receiving_player == player %}
                                     <b>{{ player_names_with_alias[(team, hint.receiving_player)] }}</b>
-                                {% elif get_slot_info(team, hint.receiving_player).type == 2 %}
-                                    <i>{{ player_names_with_alias[(team, hint.receiving_player)] }}</i>
                                 {% else %}
-                                    <a href="{{ url_for("get_player_tracker", tracker=room.tracker, tracked_team=team, tracked_player=hint.receiving_player) }}">
-                                        {{ player_names_with_alias[(team, hint.receiving_player)] }}
-                                    </a>
+                                    {{ player_names_with_alias[(team, hint.receiving_player)] }}
                                 {% endif %}
                             </td>
                             <td>{{ item_id_to_name[games[(team, hint.receiving_player)]][hint.item] }}</td>

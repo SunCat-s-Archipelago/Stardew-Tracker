@@ -72,7 +72,7 @@ class ItemName():
     SandStage_C = "SandStage C"
     SideGun_S = "SideGun S"
     Slasher_B = "Slasher B"
-    SloGauge_star = "SloGauge *"
+    SloGuage_star = "SloGuage *"
     Snake_D = "Snake D"
     Snctuary_C = "Snctuary C"
     Spreader_star = "Spreader *"

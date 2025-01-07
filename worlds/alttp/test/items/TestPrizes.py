@@ -1,7 +1,7 @@
 from typing import List
 
 from BaseClasses import Item, Location
-from test.bases import WorldTestBase
+from test.TestBase import WorldTestBase
 
 
 class TestPrizes(WorldTestBase):

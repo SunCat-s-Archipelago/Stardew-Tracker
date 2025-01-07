@@ -3,10 +3,8 @@
 # This software is released under the MIT License.
 # https://opensource.org/licenses/MIT
 
-from dataclasses import dataclass
-
 import typing
-from Options import Option, DeathLink, Toggle, DefaultOnToggle, Choice, PerGameCommonOptions
+from Options import Option, DeathLink, Toggle, DefaultOnToggle, Choice
 
 
 cost_scales = {
@@ -53,10 +51,10 @@ class ItemCacheCost(Choice):
     default = 0
 
 
-@dataclass
-class MeritousOptions(PerGameCommonOptions):
-    goal: Goal
-    include_psi_keys: IncludePSIKeys
-    include_evolution_traps: IncludeEvolutionTraps
-    item_cache_cost: ItemCacheCost
-    death_link: DeathLink
+meritous_options: typing.Dict[str, type(Option)] = {
+    "goal": Goal,
+    "include_psi_keys": IncludePSIKeys,
+    "include_evolution_traps": IncludeEvolutionTraps,
+    "item_cache_cost": ItemCacheCost,
+    "death_link": DeathLink
+}

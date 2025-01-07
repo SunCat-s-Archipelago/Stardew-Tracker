@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Dict
 
-from dataclasses import dataclass
-from Options import Choice, Option, DefaultOnToggle, DeathLink, Range, Toggle, PerGameCommonOptions
+from Options import Choice, Option, DefaultOnToggle, DeathLink, Range, Toggle
 
 
 class FreeincarnateMax(Range):
@@ -224,22 +223,22 @@ class StartCastle(Choice):
     option_white = 2
     default = option_yellow
 
-@dataclass
-class AdventureOptions(PerGameCommonOptions):
-    dragon_slay_check: DragonSlayCheck
-    death_link: DeathLink
-    bat_logic: BatLogic
-    freeincarnate_max: FreeincarnateMax
-    dragon_rando_type: DragonRandoType
-    connector_multi_slot: ConnectorMultiSlot
-    yorgle_speed: YorgleStartingSpeed
-    yorgle_min_speed: YorgleMinimumSpeed
-    grundle_speed: GrundleStartingSpeed
-    grundle_min_speed: GrundleMinimumSpeed
-    rhindle_speed: RhindleStartingSpeed
-    rhindle_min_speed: RhindleMinimumSpeed
-    difficulty_switch_a: DifficultySwitchA
-    difficulty_switch_b: DifficultySwitchB
-    start_castle: StartCastle
 
+adventure_option_definitions: Dict[str, type(Option)] = {
+    "dragon_slay_check": DragonSlayCheck,
+    "death_link": DeathLink,
+    "bat_logic": BatLogic,
+    "freeincarnate_max": FreeincarnateMax,
+    "dragon_rando_type": DragonRandoType,
+    "connector_multi_slot": ConnectorMultiSlot,
+    "yorgle_speed": YorgleStartingSpeed,
+    "yorgle_min_speed": YorgleMinimumSpeed,
+    "grundle_speed": GrundleStartingSpeed,
+    "grundle_min_speed": GrundleMinimumSpeed,
+    "rhindle_speed": RhindleStartingSpeed,
+    "rhindle_min_speed": RhindleMinimumSpeed,
+    "difficulty_switch_a": DifficultySwitchA,
+    "difficulty_switch_b": DifficultySwitchB,
+    "start_castle": StartCastle,
 
+}

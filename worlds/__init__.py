@@ -1,22 +1,16 @@
 import importlib
-import importlib.util
-import logging
 import os
 import sys
 import warnings
 import zipimport
 import time
 import dataclasses
-from typing import Dict, List, TypedDict
+from typing import Dict, List, TypedDict, Optional
 
 from Utils import local_path, user_path
 
 local_folder = os.path.dirname(__file__)
-user_folder = user_path("worlds") if user_path() != local_path() else user_path("custom_worlds")
-try:
-    os.makedirs(user_folder, exist_ok=True)
-except OSError:  # can't access/write?
-    user_folder = None
+user_folder = user_path("worlds") if user_path() != local_path() else None
 
 __all__ = {
     "network_data_package",
@@ -39,6 +33,7 @@ class GamesPackage(TypedDict, total=False):
     location_name_groups: Dict[str, List[str]]
     location_name_to_id: Dict[str, int]
     checksum: str
+    version: int  # TODO: Remove support after per game data packages API change.
 
 
 class DataPackage(TypedDict):
@@ -50,7 +45,7 @@ class WorldSource:
     path: str  # typically relative path from this module
     is_zip: bool = False
     relative: bool = True  # relative to regular world import folder
-    time_taken: float = -1.0
+    time_taken: Optional[float] = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.path}, is_zip={self.is_zip}, relative={self.relative})"
@@ -66,12 +61,14 @@ class WorldSource:
             start = time.perf_counter()
             if self.is_zip:
                 importer = zipimport.zipimporter(self.resolved_path)
-                spec = importer.find_spec(os.path.basename(self.path).rsplit(".", 1)[0])
-                assert spec, f"{self.path} is not a loadable module"
-                mod = importlib.util.module_from_spec(spec)
+                if hasattr(importer, "find_spec"):  # new in Python 3.10
+                    spec = importer.find_spec(os.path.basename(self.path).rsplit(".", 1)[0])
+                    assert spec, f"{self.path} is not a loadable module"
+                    mod = importlib.util.module_from_spec(spec)
+                else:  # TODO: remove with 3.8 support
+                    mod = importer.load_module(os.path.basename(self.path).rsplit(".", 1)[0])
 
                 mod.__package__ = f"worlds.{mod.__package__}"
-
                 mod.__name__ = f"worlds.{mod.__name__}"
                 sys.modules[mod.__name__] = mod
                 with warnings.catch_warnings():
@@ -92,6 +89,7 @@ class WorldSource:
             print(f"Could not load world {self}:", file=file_like)
             traceback.print_exc(file=file_like)
             file_like.seek(0)
+            import logging
             logging.exception(file_like.read())
             failed_world_loads.append(os.path.basename(self.path).rsplit(".", 1)[0])
             return False
@@ -106,12 +104,7 @@ for folder in (folder for folder in (user_folder, local_folder) if folder):
         if not entry.name.startswith(("_", ".")):
             file_name = entry.name if relative else os.path.join(folder, entry.name)
             if entry.is_dir():
-                if os.path.isfile(os.path.join(entry.path, '__init__.py')):
-                    world_sources.append(WorldSource(file_name, relative=relative))
-                elif os.path.isfile(os.path.join(entry.path, '__init__.pyc')):
-                    world_sources.append(WorldSource(file_name, relative=relative))
-                else:
-                    logging.warning(f"excluding {entry.name} from world sources because it has no __init__.py")
+                world_sources.append(WorldSource(file_name, relative=relative))
             elif entry.is_file() and entry.name.endswith(".apworld"):
                 world_sources.append(WorldSource(file_name, is_zip=True, relative=relative))
 
@@ -126,4 +119,3 @@ from .AutoWorld import AutoWorldRegister
 network_data_package: DataPackage = {
     "games": {world_name: world.get_data_package_data() for world_name, world in AutoWorldRegister.world_types.items()},
 }
-

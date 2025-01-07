@@ -19,10 +19,12 @@ def _sorter(location: "FactorioScienceLocation"):
     return location.complexity, location.rel_cost
 
 
-def get_shapes(world: "Factorio") -> Dict["FactorioScienceLocation", Set["FactorioScienceLocation"]]:
+def get_shapes(factorio_world: "Factorio") -> Dict["FactorioScienceLocation", Set["FactorioScienceLocation"]]:
+    world = factorio_world.multiworld
+    player = factorio_world.player
     prerequisites: Dict["FactorioScienceLocation", Set["FactorioScienceLocation"]] = {}
-    layout = world.options.tech_tree_layout.value
-    locations: List["FactorioScienceLocation"] = sorted(world.science_locations, key=lambda loc: loc.name)
+    layout = world.tech_tree_layout[player].value
+    locations: List["FactorioScienceLocation"] = sorted(factorio_world.science_locations, key=lambda loc: loc.name)
     world.random.shuffle(locations)
 
     if layout == TechTreeLayout.option_single:
@@ -245,5 +247,5 @@ def get_shapes(world: "Factorio") -> Dict["FactorioScienceLocation", Set["Factor
     else:
         raise NotImplementedError(f"Layout {layout} is not implemented.")
 
-    world.tech_tree_layout_prerequisites = prerequisites
+    factorio_world.tech_tree_layout_prerequisites = prerequisites
     return prerequisites

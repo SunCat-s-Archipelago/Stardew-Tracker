@@ -13,7 +13,6 @@
     plum: "AF99EF"  # typically progression item
     salmon: "FA8072"  # typically trap item
     white: "FFFFFF"  # not used, if you want to change the generic text color change color in Label
-    orange: "FF7700"  # Used for command echo
 <Label>:
     color: "FFFFFF"
 <TabbedPanel>:
@@ -59,7 +58,7 @@
     finding_text: "Finding Player"
     location_text: "Location"
     entrance_text: "Entrance"
-    status_text: "Status"
+    found_text: "Found?"
     TooltipLabel:
         id: receiving
         sort_key: 'receiving'
@@ -96,9 +95,9 @@
         valign: 'center'
         pos_hint: {"center_y": 0.5}
     TooltipLabel:
-        id: status
-        sort_key: 'status'
-        text: root.status_text
+        id: found
+        sort_key: 'found'
+        text: root.found_text
         halign: 'center'
         valign: 'center'
         pos_hint: {"center_y": 0.5}

@@ -3,10 +3,8 @@
 # This software is released under the MIT License.
 # https://opensource.org/licenses/MIT
 
-from dataclasses import dataclass
-
 import typing
-from Options import Option, Range, PerGameCommonOptions
+from Options import Option, Range
 
 
 class TaskAdvances(Range):
@@ -71,12 +69,12 @@ class KillerTrapWeight(Range):
     default = 0
 
 
-@dataclass
-class BumpstikOptions(PerGameCommonOptions):
-    task_advances: TaskAdvances
-    turners: Turners
-    paint_cans: PaintCans
-    trap_count: Traps
-    rainbow_trap_weight: RainbowTrapWeight
-    spinner_trap_weight: SpinnerTrapWeight
-    killer_trap_weight: KillerTrapWeight
+bumpstik_options: typing.Dict[str, type(Option)] = {
+    "task_advances": TaskAdvances,
+    "turners": Turners,
+    "paint_cans": PaintCans,
+    "trap_count": Traps,
+    "rainbow_trap_weight": RainbowTrapWeight,
+    "spinner_trap_weight": SpinnerTrapWeight,
+    "killer_trap_weight": KillerTrapWeight
+}

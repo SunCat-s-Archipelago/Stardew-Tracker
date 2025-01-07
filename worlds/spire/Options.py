@@ -1,7 +1,5 @@
 import typing
-from dataclasses import dataclass
-
-from Options import TextChoice, Range, Toggle, PerGameCommonOptions
+from Options import TextChoice, Option, Range, Toggle
 
 
 class Character(TextChoice):
@@ -57,18 +55,9 @@ class Downfall(Toggle):
     default = 0
 
 
-class DeathLink(Range):
-    """Percentage of health to lose when a death link is received."""
-    display_name = "Death Link %"
-    range_start = 0
-    range_end = 100
-    default = 0
-
-
-@dataclass
-class SpireOptions(PerGameCommonOptions):
-    character: Character
-    ascension: Ascension
-    final_act: FinalAct
-    downfall: Downfall
-    death_link: DeathLink
+spire_options: typing.Dict[str, type(Option)] = {
+    "character": Character,
+    "ascension": Ascension,
+    "final_act": FinalAct,
+    "downfall": Downfall,
+}

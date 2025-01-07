@@ -11,7 +11,7 @@ def _generate_entrances(player: int, entrance_list: [str], parent: Region):
     return [Entrance(player, entrance, parent) for entrance in entrance_list]
 
 
-def create_regions(multiworld: MultiWorld, player: int):
+def create_regions(world: MultiWorld, player: int):
     region_map = {
         "Menu": level1_locs + ["Bonus Booster 1"] + [f"Treasure Bumper {i + 1}" for i in range(8)],
         "Level 1": level2_locs + ["Bonus Booster 2"] + [f"Treasure Bumper {i + 9}" for i in range(8)],
@@ -34,7 +34,7 @@ def create_regions(multiworld: MultiWorld, player: int):
 
     for x, region_name in enumerate(region_map):
         region_list = region_map[region_name]
-        region = Region(region_name, player, multiworld)
+        region = Region(region_name, player, world)
         for location_name in region_list:
             region.locations += [BumpStikLocation(
                 player, location_name, location_table[location_name], region)]
@@ -42,9 +42,9 @@ def create_regions(multiworld: MultiWorld, player: int):
             region.exits += _generate_entrances(player,
                                                 [f"To Level {x + 1}"], region)
 
-        multiworld.regions += [region]
+        world.regions += [region]
 
     for entrance in entrance_map:
-        connection = multiworld.get_entrance(f"To {entrance}", player)
+        connection = world.get_entrance(f"To {entrance}", player)
         connection.access_rule = entrance_map[entrance]
-        connection.connect(multiworld.get_region(entrance, player))
+        connection.connect(world.get_region(entrance, player))

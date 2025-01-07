@@ -1,13 +1,10 @@
-from typing import Callable, TYPE_CHECKING
+from typing import Callable
 
-from BaseClasses import CollectionState
-
-if TYPE_CHECKING:
-    from . import CliqueWorld
+from BaseClasses import CollectionState, MultiWorld
 
 
-def get_button_rule(world: "CliqueWorld") -> Callable[[CollectionState], bool]:
-    if world.options.hard_mode:
-        return lambda state: state.has("Button Activation", world.player)
+def get_button_rule(multiworld: MultiWorld, player: int) -> Callable[[CollectionState], bool]:
+    if getattr(multiworld, "hard_mode")[player]:
+        return lambda state: state.has("Button Activation", player)
 
     return lambda state: True

@@ -1,5 +1,5 @@
-from Options import Choice, Toggle, Range, PerGameCommonOptions
-from dataclasses import dataclass
+import typing
+from Options import Choice, Option, Toggle, Range
 
 
 class RouteRequired(Choice):
@@ -86,17 +86,17 @@ class RandoBattleOptions(Toggle):
     default = 0
 
 
-@dataclass
-class UndertaleOptions(PerGameCommonOptions):
-    route_required:                           RouteRequired
-    starting_area:                            StartingArea
-    key_hunt:                                 KeyHunt
-    key_pieces:                               KeyPieces
-    rando_love:                               RandomizeLove
-    rando_stats:                              RandomizeStats
-    temy_include:                             IncludeTemy
-    no_equips:                                NoEquips
-    only_flakes:                              OnlyFlakes
-    prog_armor:                               ProgressiveArmor
-    prog_weapons:                             ProgressiveWeapons
-    rando_item_button:                        RandoBattleOptions
+undertale_options: typing.Dict[str, type(Option)] = {
+    "route_required":                           RouteRequired,
+    "starting_area":                            StartingArea,
+    "key_hunt":                                 KeyHunt,
+    "key_pieces":                               KeyPieces,
+    "rando_love":                               RandomizeLove,
+    "rando_stats":                              RandomizeStats,
+    "temy_include":                             IncludeTemy,
+    "no_equips":                                NoEquips,
+    "only_flakes":                              OnlyFlakes,
+    "prog_armor":                               ProgressiveArmor,
+    "prog_weapons":                             ProgressiveWeapons,
+    "rando_item_button":                     RandoBattleOptions,
+}

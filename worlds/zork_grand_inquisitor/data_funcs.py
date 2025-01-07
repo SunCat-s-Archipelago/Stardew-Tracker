@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, Set, Tuple, Union
 
 from .data.entrance_rule_data import entrance_rule_data
 from .data.item_data import item_data, ZorkGrandInquisitorItemData
@@ -54,15 +54,15 @@ def id_to_locations() -> Dict[int, ZorkGrandInquisitorLocations]:
     }
 
 
-def item_groups() -> Dict[str, List[str]]:
-    groups: Dict[str, List[str]] = dict()
+def item_groups() -> Dict[str, Set[str]]:
+    groups: Dict[str, Set[str]] = dict()
 
     item: ZorkGrandInquisitorItems
     data: ZorkGrandInquisitorItemData
     for item, data in item_data.items():
         if data.tags is not None:
             for tag in data.tags:
-                groups.setdefault(tag.value, list()).append(item.value)
+                groups.setdefault(tag.value, set()).add(item.value)
 
     return {k: v for k, v in groups.items() if len(v)}
 
@@ -92,31 +92,31 @@ def game_id_to_items() -> Dict[int, ZorkGrandInquisitorItems]:
     return mapping
 
 
-def location_groups() -> Dict[str, List[str]]:
-    groups: Dict[str, List[str]] = dict()
+def location_groups() -> Dict[str, Set[str]]:
+    groups: Dict[str, Set[str]] = dict()
 
     tag: ZorkGrandInquisitorTags
     for tag in ZorkGrandInquisitorTags:
-        groups[tag.value] = list()
+        groups[tag.value] = set()
 
     location: ZorkGrandInquisitorLocations
     data: ZorkGrandInquisitorLocationData
     for location, data in location_data.items():
         if data.tags is not None:
             for tag in data.tags:
-                groups[tag.value].append(location.value)
+                groups[tag.value].add(location.value)
 
     return {k: v for k, v in groups.items() if len(v)}
 
 
 def locations_by_region(include_deathsanity: bool = False) -> Dict[
-    ZorkGrandInquisitorRegions, List[ZorkGrandInquisitorLocations]
+    ZorkGrandInquisitorRegions, Set[ZorkGrandInquisitorLocations]
 ]:
-    mapping: Dict[ZorkGrandInquisitorRegions, List[ZorkGrandInquisitorLocations]] = dict()
+    mapping: Dict[ZorkGrandInquisitorRegions, Set[ZorkGrandInquisitorLocations]] = dict()
 
     region: ZorkGrandInquisitorRegions
     for region in ZorkGrandInquisitorRegions:
-        mapping[region] = list()
+        mapping[region] = set()
 
     location: ZorkGrandInquisitorLocations
     data: ZorkGrandInquisitorLocationData
@@ -126,7 +126,7 @@ def locations_by_region(include_deathsanity: bool = False) -> Dict[
         ):
             continue
 
-        mapping[data.region].append(location)
+        mapping[data.region].add(location)
 
     return mapping
 

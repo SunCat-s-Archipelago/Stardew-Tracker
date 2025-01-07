@@ -1,9 +1,6 @@
-from typing import Callable, Dict, NamedTuple, Optional, TYPE_CHECKING
+from typing import Callable, Dict, NamedTuple, Optional
 
-from BaseClasses import Location
-
-if TYPE_CHECKING:
-    from . import CliqueWorld
+from BaseClasses import Location, MultiWorld
 
 
 class CliqueLocation(Location):
@@ -13,7 +10,7 @@ class CliqueLocation(Location):
 class CliqueLocationData(NamedTuple):
     region: str
     address: Optional[int] = None
-    can_create: Callable[["CliqueWorld"], bool] = lambda world: True
+    can_create: Callable[[MultiWorld, int], bool] = lambda multiworld, player: True
     locked_item: Optional[str] = None
 
 
@@ -25,7 +22,7 @@ location_data_table: Dict[str, CliqueLocationData] = {
     "The Item on the Desk": CliqueLocationData(
         region="The Button Realm",
         address=69696968,
-        can_create=lambda world: world.options.hard_mode,
+        can_create=lambda multiworld, player: bool(getattr(multiworld, "hard_mode")[player]),
     ),
     "In the Player's Mind": CliqueLocationData(
         region="The Button Realm",

@@ -1,4 +1,4 @@
-from test.bases import TestBase
+from test.TestBase import TestBase
 from ..data import Warp
 
 

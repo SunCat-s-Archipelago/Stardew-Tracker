@@ -81,23 +81,23 @@ talking:
 
     ; Give powder
     ld   a, [$DB4C]
-    cp   $20
+    cp   $10
     jr   nc, doNotGivePowder
-    ld   a, $20
+    ld   a, $10
     ld   [$DB4C], a
 doNotGivePowder:
 
     ld   a, [$DB4D]
-    cp   $30
+    cp   $10
     jr   nc, doNotGiveBombs
-    ld   a, $30
+    ld   a, $10
     ld   [$DB4D], a
 doNotGiveBombs:
 
     ld   a, [$DB45]
-    cp   $30
+    cp   $10
     jr   nc, doNotGiveArrows
-    ld   a, $30
+    ld   a, $10
     ld   [$DB45], a
 doNotGiveArrows:
 

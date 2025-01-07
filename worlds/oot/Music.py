@@ -1,5 +1,6 @@
 #Much of this is heavily inspired from and/or based on az64's / Deathbasket's MM randomizer
 
+import random
 import os
 from .Utils import compare_version, data_path
 
@@ -174,7 +175,7 @@ def process_sequences(rom, sequences, target_sequences, disabled_source_sequence
     return sequences, target_sequences
 
 
-def shuffle_music(sequences, target_sequences, music_mapping, log, rand):
+def shuffle_music(sequences, target_sequences, music_mapping, log):
     sequence_dict = {}
     sequence_ids = []
 
@@ -190,7 +191,7 @@ def shuffle_music(sequences, target_sequences, music_mapping, log, rand):
     # Shuffle the sequences
     if len(sequences) < len(target_sequences):
         raise Exception(f"Not enough custom music/fanfares ({len(sequences)}) to omit base Ocarina of Time sequences ({len(target_sequences)}).")
-    rand.shuffle(sequence_ids)
+    random.shuffle(sequence_ids)
 
     sequences = []
     for target_sequence in target_sequences:
@@ -327,7 +328,7 @@ def rebuild_sequences(rom, sequences):
             rom.write_byte(base, j.instrument_set)
 
 
-def shuffle_pointers_table(rom, ids, music_mapping, log, rand):
+def shuffle_pointers_table(rom, ids, music_mapping, log):
     # Read in all the Music data
     bgm_data = {}
     bgm_ids = []
@@ -340,7 +341,7 @@ def shuffle_pointers_table(rom, ids, music_mapping, log, rand):
             bgm_ids.append(bgm[0])
 
     # shuffle data
-    rand.shuffle(bgm_ids)
+    random.shuffle(bgm_ids)
 
     # Write Music data back in random ordering
     for bgm in ids:
@@ -423,13 +424,13 @@ def randomize_music(rom, ootworld, music_mapping):
     #         process_sequences(rom, sequences, target_sequences, disabled_source_sequences, disabled_target_sequences, bgm_ids)
     #         if ootworld.background_music == 'random_custom_only':
     #             sequences = [seq for seq in sequences if seq.cosmetic_name not in [x[0] for x in bgm_ids] or seq.cosmetic_name in music_mapping.values()]
-    #         sequences, log = shuffle_music(sequences, target_sequences, music_mapping, log, ootworld.random)
+    #         sequences, log = shuffle_music(sequences, target_sequences, music_mapping, log)
 
     #     if ootworld.fanfares in ['random', 'random_custom_only'] or ff_mapped or ocarina_mapped:
     #         process_sequences(rom, fanfare_sequences, fanfare_target_sequences, disabled_source_sequences, disabled_target_sequences, ff_ids, 'fanfare')
     #         if ootworld.fanfares == 'random_custom_only':
     #             fanfare_sequences = [seq for seq in fanfare_sequences if seq.cosmetic_name not in [x[0] for x in fanfare_sequence_ids] or seq.cosmetic_name in music_mapping.values()]
-    #         fanfare_sequences, log = shuffle_music(fanfare_sequences, fanfare_target_sequences, music_mapping, log, ootworld.random)
+    #         fanfare_sequences, log = shuffle_music(fanfare_sequences, fanfare_target_sequences, music_mapping, log)
 
     #     if disabled_source_sequences:
     #         log = disable_music(rom, disabled_source_sequences.values(), log)
@@ -437,10 +438,10 @@ def randomize_music(rom, ootworld, music_mapping):
     #     rebuild_sequences(rom, sequences + fanfare_sequences)
     # else:
     if ootworld.background_music == 'randomized' or bgm_mapped:
-        log = shuffle_pointers_table(rom, bgm_ids, music_mapping, log, ootworld.random)
+        log = shuffle_pointers_table(rom, bgm_ids, music_mapping, log)
 
     if ootworld.fanfares == 'randomized' or ff_mapped or ocarina_mapped:
-        log = shuffle_pointers_table(rom, ff_ids, music_mapping, log, ootworld.random)
+        log = shuffle_pointers_table(rom, ff_ids, music_mapping, log)
     # end_else
     if disabled_target_sequences:
         log = disable_music(rom, disabled_target_sequences.values(), log)

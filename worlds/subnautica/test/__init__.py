@@ -15,7 +15,7 @@ class SubnauticaTest(unittest.TestCase):
                     self.assertGreater(self.scancutoff, id)
 
     def testGroupAssociation(self):
-        from .. import items
+        from worlds.subnautica import items
         for item_id, item_data in items.item_table.items():
             if item_data.type == items.ItemType.group:
                 with self.subTest(item=item_data.name):
