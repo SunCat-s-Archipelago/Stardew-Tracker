@@ -1,0 +1,4 @@
+connection:
+  server: localhost:38281
+  player: NugatStardew
+  password: none
