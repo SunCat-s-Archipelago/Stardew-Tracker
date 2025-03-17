@@ -16,12 +16,18 @@ except ImportError:
 import yaml
 
 
-class SWData:
-    missing_locations: []
+def print_with_linebreak(msg: str) -> None:
+    print()
+    print(msg)
+
+
+def get_ssl_context():
+    import certifi
+    return ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=certifi.where())
 
 
 class ConnectionContext:
-    tags: typing.Set[str] = {"AP", "Tracker"}
+    tags: typing.Set[str] = {"Tracker", "NoText"}
     game: typing.Optional[str] = "Stardew Valley"
     items_handling: typing.Optional[int] = 0b111
     want_slot_data: bool = True  # should slot_data be retrieved via Connect
@@ -37,8 +43,8 @@ class ConnectionContext:
     watcher_event: asyncio.Event
     items_received: typing.List[NetworkItem]
     missing_locations: typing.Set[int]  # server state
-    checked_locations: typing.Set[int]  # server state
-    server_locations: typing.Set[int]
+    #checked_locations: typing.Set[int]  # server state
+    #server_locations: typing.Set[int]
     slot_data: typing.Dict[str, typing.Any]
 
     def __init__(self, server_address: str, username: str, password: str) -> None:
@@ -48,8 +54,8 @@ class ConnectionContext:
         self.watcher_event = asyncio.Event()
         self.items_received = []
         self.missing_locations = set()  # server state
-        self.checked_locations = set()  # server state
-        self.server_locations = set()  # all locations the server knows of, missing_location | checked_locations
+        #self.checked_locations = set()  # server state
+        #self.server_locations = set()  # all locations the server knows of, missing_location | checked_locations
         self.slot_data = {}
 
     async def disconnect(self):
@@ -127,8 +133,8 @@ async def process_server_cmd(ctx, args: dict):
             await ctx.disconnect()
         else:
             ctx.missing_locations = set(args["missing_locations"])
-            ctx.checked_locations = set(args["checked_locations"])
-            ctx.server_locations = ctx.missing_locations | ctx.checked_locations
+            #ctx.checked_locations = set(args["checked_locations"])
+            #ctx.server_locations = ctx.missing_locations | ctx.checked_locations
             ctx.slot_data = args["slot_data"]
             if ctx.slot_data["client_version"] != "5.0.0":
                 print(f"Stardew Valley client version is {ctx.slot_data['client_version']}, while the only supported "
@@ -193,14 +199,10 @@ async def server_loop(ctx: ConnectionContext):
         await ctx.disconnect()
 
 
-def print_with_linebreak(msg: str) -> None:
-    print()
-    print(msg)
-
-
-def get_ssl_context():
-    import certifi
-    return ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=certifi.where())
+class SWData:
+    missing_locations: typing.Set[int]
+    slot_data: typing.Dict[str, typing.Any]
+    items_received: typing.List[NetworkItem]
 
 
 def main():
@@ -209,8 +211,11 @@ def main():
         address = yaml_data["connection"]["server"]
         if "://" not in address:
             address = f"ws://{address}"
-        ctx = ConnectionContext(address, yaml_data["connection"]["player"], yaml_data["connection"]["password"])
-    asyncio.run(server_loop(ctx))
+    with ConnectionContext(address, yaml_data["connection"]["player"], yaml_data["connection"]["password"]) as ctx:
+        asyncio.run(server_loop(ctx))
+        SWData.missing_locations = ctx.missing_locations
+        SWData.slot_data = ctx.slot_data
+        SWData.items_received = ctx.items_received
 
 
 if __name__ == '__main__':
