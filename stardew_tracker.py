@@ -1,13 +1,16 @@
 import asyncio
 import typing
 import urllib.parse
+from argparse import Namespace
 from typing import Optional
 import websockets
 import ssl
 
 import Utils
+from BaseClasses import MultiWorld
 from NetUtils import (Endpoint, decode, NetworkSlot, encode, NetworkItem)
 from Utils import Version
+from worlds.stardew_valley import StardewValleyWorld
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -28,7 +31,7 @@ def get_ssl_context():
 
 class ConnectionContext:
     tags: typing.Set[str] = {"Tracker", "NoText"}
-    game: typing.Optional[str] = "Stardew Valley"
+    game: typing.Optional[str] = StardewValleyWorld.game
     items_handling: typing.Optional[int] = 0b111
     want_slot_data: bool = True  # should slot_data be retrieved via Connect
 
@@ -42,9 +45,7 @@ class ConnectionContext:
     password: typing.Optional[str]
     watcher_event: asyncio.Event
     items_received: typing.List[NetworkItem]
-    missing_locations: typing.Set[int]  # server state
-    #checked_locations: typing.Set[int]  # server state
-    #server_locations: typing.Set[int]
+    missing_locations: typing.Set[int]
     slot_data: typing.Dict[str, typing.Any]
 
     def __init__(self, server_address: str, username: str, password: str) -> None:
@@ -213,9 +214,19 @@ def main():
             address = f"ws://{address}"
     with ConnectionContext(address, yaml_data["connection"]["player"], yaml_data["connection"]["password"]) as ctx:
         asyncio.run(server_loop(ctx))
-        SWData.missing_locations = ctx.missing_locations
         SWData.slot_data = ctx.slot_data
+        SWData.missing_locations = ctx.missing_locations
         SWData.items_received = ctx.items_received
+    multiworld = MultiWorld(1)
+    multiworld.game[1] = StardewValleyWorld.game
+    multiworld.player_name = {1: "Player"}
+    args = Namespace()
+    for name, option in StardewValleyWorld.options_dataclass.type_hints.items():
+        options = {}
+        value = option(SWData.slot_data[name]) if name in SWData.slot_data else option.from_any(option.default)
+        options.update({1: value})
+        setattr(args, name, options)
+    multiworld.set_options(args)
 
 
 if __name__ == '__main__':
