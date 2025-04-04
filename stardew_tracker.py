@@ -1,4 +1,5 @@
 import asyncio
+import random
 import re
 import typing
 import urllib.parse
@@ -16,21 +17,22 @@ except ImportError:
 import yaml
 
 import Utils
-from BaseClasses import MultiWorld, CollectionState, Entrance, Region
+from BaseClasses import MultiWorld, CollectionState, Entrance, Region, Item
 from NetUtils import (Endpoint, decode, encode)
 from Utils import Version
-from worlds.stardew_valley import StardewValleyWorld, StardewLogic, StardewLocation, BundleRoom, set_rules
+from worlds.stardew_valley import StardewValleyWorld, StardewLogic, StardewLocation, BundleRoom, set_rules, item_table, \
+    items_by_group, Group
 from worlds.stardew_valley.bundles.bundle import Bundle
 from worlds.stardew_valley.bundles.bundle_item import BundleItem
 from worlds.stardew_valley.data.bundle_data import strawberry, vault_carnival_items, pineapple, taro_root, ostrich_egg, \
     banana, mango, deluxe_fertilizer, deluxe_retaining_soil, hyper_speed_gro, tiger_slime_egg, ginger_ale, pina_colada, \
     lionfish, blue_discus, stingray, magic_bait, ginger, magma_cap, vault_qi_helper_items
 from worlds.stardew_valley.locations import all_locations, events_locations
-from worlds.stardew_valley.options import StardewValleyOptions, EntranceRandomization
+from worlds.stardew_valley.options import StardewValleyOptions, EntranceRandomization, SeasonRandomization
 from worlds.stardew_valley.region_classes import ConnectionData, RandomizationFlag
 from worlds.stardew_valley.regions import RegionFactory, create_final_connections_and_regions, \
     remove_excluded_entrances, create_connections_for_generation, add_non_randomized_connections
-from worlds.stardew_valley.strings.goal_names import Goal as GoalName
+from worlds.stardew_valley.items import StardewItemFactory, StardewItemDeleter, remove_items, create_unique_items
 
 
 def print_with_linebreak(msg: str) -> None:
@@ -324,14 +326,7 @@ class SWData:
     items_received: typing.Set[str] = set()
 
 
-def main():
-    with open("stardew_tracker_options.yaml", "r") as document:
-        yaml_data = yaml.load(document, Loader)
-        address = yaml_data["connection"]["server"]
-        if "://" not in address:
-            address = f"ws://{address}"
-    username = yaml_data["connection"]["player"]
-    password = yaml_data["connection"]["password"]
+def connect_and_fill_swdata(address, username, password):
     with ConnectionContext(address, username, password) as ctx:
         asyncio.run(server_loop(ctx))
         if not ctx.watcher_event.is_set():
@@ -346,6 +341,40 @@ def main():
         for name, _id in StardewValleyWorld.item_name_to_id.items():
             if _id in ctx.items_received:
                 SWData.items_received.add(name)
+
+
+def create_items(sw: StardewValleyWorld):
+    items_to_exclude = sw.multiworld.precollected_items[sw.player]
+    if sw.options.season_randomization == SeasonRandomization.option_disabled:
+        items_to_exclude = [item for item in items_to_exclude
+                            if item_table[item.name] not in items_by_group[Group.SEASON]]
+
+    def create_items(item_factory: StardewItemFactory, item_deleter: StardewItemDeleter,
+                     items_to_exclude: typing.List[Item], options: StardewValleyOptions, random: random.Random) -> typing.List[Item]:
+        unique_items = create_unique_items(item_factory, options, random)
+        babies_to_exclude = list(filter(lambda item: item.name in [
+            _item.name for _item in items_by_group[Group.BABY]
+        ], items_to_exclude))
+        for item in babies_to_exclude:
+            items_to_exclude.remove(item)
+        remove_items(item_deleter, items_to_exclude, unique_items)
+        added_babies = list(filter(lambda item: item.name in [
+            _item.name for _item in items_by_group[Group.BABY]
+        ], unique_items))
+        for i in range(min(len(babies_to_exclude), 2)):
+            baby = added_babies.pop()
+            unique_items.remove(baby)
+            item_deleter(baby)
+        return unique_items
+
+    created_items = create_items(sw.create_item, sw.delete_item, items_to_exclude, sw.options, sw.random)
+
+    sw.multiworld.itempool += created_items
+    sw.setup_player_events()
+    sw.setup_victory()
+
+
+def create_multiworld():
     multiworld = MultiWorld(1)
     multiworld.game[1] = StardewValleyWorld.game
     multiworld.player_name = {1: "Player"}
@@ -366,12 +395,12 @@ def main():
 
     create_regions(sw_world, SWData.slot_data["modified_bundles"], SWData.server_location_names)
 
-    # "create_items"
+    # treat server inventory as starting inventory
     for item_name in SWData.items_received:
         item = sw_world.create_starting_item(item_name)
-        multiworld.push_precollected(item)
-    sw_world.setup_player_events()
-    sw_world.setup_victory()
+        if item.advancement:
+            multiworld.push_precollected(item)
+    create_items(sw_world)
 
     set_rules(sw_world)
 
@@ -379,24 +408,10 @@ def main():
 
     # no pre_fill
 
-    # https://stackoverflow.com/a/16090640
-    # https://creativecommons.org/licenses/by-sa/3.0/
-    def natural_sort_key(s, _nsre=re.compile(r'(\d+)')):
-        return [int(text) if text.isdigit() else text.lower()
-                for text in _nsre.split(s)]
+    return multiworld
 
-    def loc_alphabetical_sort_key(loc: StardewLocation):
-        return loc.name
 
-    def loc_natural_sort_key(loc: StardewLocation):
-        return natural_sort_key(loc.name)
-
-    def loc_type_sort_key(loc: StardewLocation):
-        return 1 if loc.event else 0
-
-    def event_sort_key(event: StardewLocation):
-        return [event.parent_region.name, event.name]
-
+def build_map_for_sorting(multiworld: MultiWorld) -> MappingProxyType[str, typing.Tuple[typing.Optional[str], int]]:
     region_name_to_parent_name_mutable: typing.Dict[str, typing.Tuple[typing.Optional[str], int]] = {}
     regions_to_visit = set(multiworld.regions.region_cache[1].values())
     region = multiworld.regions.region_cache[1]["Menu"]
@@ -430,8 +445,41 @@ def main():
         region = queue.pop(0)
         candidates.clear()
 
-    region_name_to_parent_name: MappingProxyType[str, typing.Tuple[typing.Optional[str], int]] = MappingProxyType(
-        region_name_to_parent_name_mutable)
+    return MappingProxyType(region_name_to_parent_name_mutable)
+
+
+def main():
+    with open("stardew_tracker_options.yaml", "r") as document:
+        yaml_data = yaml.load(document, Loader)
+        address = yaml_data["connection"]["server"]
+        if "://" not in address:
+            address = f"ws://{address}"
+    username = yaml_data["connection"]["player"]
+    password = yaml_data["connection"]["password"]
+
+    connect_and_fill_swdata(address, username, password)
+
+    # https://stackoverflow.com/a/16090640
+    # https://creativecommons.org/licenses/by-sa/3.0/
+    def natural_sort_key(s, _nsre=re.compile(r'(\d+)')):
+        return [int(text) if text.isdigit() else text.lower()
+                for text in _nsre.split(s)]
+
+    def loc_alphabetical_sort_key(loc: StardewLocation):
+        return loc.name
+
+    def loc_natural_sort_key(loc: StardewLocation):
+        return natural_sort_key(loc.name)
+
+    def loc_type_sort_key(loc: StardewLocation):
+        return 1 if loc.event else 0
+
+    def event_sort_key(event: StardewLocation):
+        return [event.parent_region.name, event.name]
+
+    multiworld = create_multiworld()
+
+    region_name_to_parent_name = build_map_for_sorting(multiworld)
 
     def tuple_region_sort_key(t: typing.Tuple[Region, typing.Any], _region_name_to_parent_name: MappingProxyType[str,
                               typing.Tuple[typing.Optional[str], int]] =
@@ -483,9 +531,7 @@ def main():
         event_location_list.remove(accessible_event_loc)
         multiworld.push_precollected(accessible_event_loc.item)
         print(f"{Fore.BLACK}{Back.BLUE}{Back.LIGHTBLACK_EX}[Event: {accessible_event_loc.name}]{Style.RESET_ALL}")
-    is_goal_accessible = goal.can_reach(multiworld.state) if (
-            goal.name != GoalName.allsanity and goal.name != GoalName.perfection
-    ) else len(locations_to_check_per_region) == 0
+    is_goal_accessible = goal.can_reach(multiworld.state)
     print(f"{Fore.BLACK}{Back.BLUE}{Back.LIGHTBLACK_EX}[Goal: {goal.name}, is {'' if is_goal_accessible else 'not '}" +
           f"accessible]{Style.RESET_ALL}")
 
