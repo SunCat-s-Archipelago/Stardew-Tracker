@@ -9,8 +9,8 @@ import typing
 import time
 import functools
 
-import ModuleUpdate
-ModuleUpdate.update()
+#import ModuleUpdate
+#ModuleUpdate.update()
 
 import websockets
 
