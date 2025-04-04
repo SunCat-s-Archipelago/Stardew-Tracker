@@ -493,6 +493,9 @@ def extract_accessible_locations(mw: MultiWorld, locs_per_region: typing.List[ty
     output_regions: typing.List[str] = []
     for _tuple in locs_per_region[:]:
         region = _tuple[0]
+        if len(_tuple[1]) == 0:
+            locs_per_region.remove(_tuple)
+            continue
         if not region.can_reach(mw.state):
             continue
         if region.name not in output_region_to_locations.keys():
