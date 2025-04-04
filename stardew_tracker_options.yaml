@@ -1,7 +1,8 @@
 connection:
   server: localhost:38281
   player: Player1
-  password: noneoutput_options:
+  password: none
+output_options:
   output_file: "output.txt" # write `false` without quotes if you want to disable text file output
   completed_events: [] # event names should exactly match how they are written in output
   show_events: true # if true, locations that depend on an event are printed after said event;
