@@ -691,11 +691,11 @@ def messagebox(title: str, text: str, error: bool = False) -> None:
     def run(*args: str):
         return subprocess.run(args, capture_output=True, text=True).stdout.split("\n", 1)[0] or None
 
-    def is_kivy_running():
-        if "kivy" in sys.modules:
-            from kivy.app import App
-            return App.get_running_app() is not None
-        return False
+    #def is_kivy_running():
+    #    if "kivy" in sys.modules:
+    #        from kivy.app import App
+    #        return App.get_running_app() is not None
+    #    return False
 
     #if is_kivy_running():
     #    from kvui import MessageBox
