@@ -32,6 +32,7 @@ from worlds.stardew_valley.regions import RegionFactory, create_final_connection
     remove_excluded_entrances, create_connections_for_generation, add_non_randomized_connections
 from worlds.stardew_valley.strings.goal_names import Goal as GoalName
 
+
 def print_with_linebreak(msg: str) -> None:
     print()
     print(msg)
@@ -79,12 +80,13 @@ class ConnectionContext:
         asyncio.run(self.disconnect())
 
     async def disconnect(self):
-        if self.server and self.server.socket is not None and self.server.socket.open:
+        if self.server and self.server.socket is not None and self.server.socket.state == websockets.protocol.State.OPEN:
             await self.server.socket.close()
 
     async def send_msgs(self, msgs: typing.List[typing.Any]) -> None:
         """ `msgs` JSON serializable """
-        if not self.server or not self.server.socket.open or self.server.socket.closed:
+        if (not self.server or not self.server.socket.state == websockets.protocol.State.OPEN or
+                self.server.socket.state == websockets.protocol.State.CLOSED):
             return
         await self.server.socket.send(encode(msgs))
 
@@ -190,7 +192,7 @@ async def server_loop(ctx: ConnectionContext):
         async for data in ctx.server.socket:
             for msg in decode(data):
                 await process_server_cmd(ctx, msg)
-                if not ctx.server.socket.open:
+                if not ctx.server.socket.state == websockets.protocol.State.OPEN:
                     break
         print(f"Disconnected from multiworld server")
     except websockets.InvalidMessage:
