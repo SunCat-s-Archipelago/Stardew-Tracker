@@ -27,8 +27,8 @@ from worlds import network_data_package, AutoWorldRegister
 import os
 import ssl
 
-if typing.TYPE_CHECKING:
-    import kvui
+#if typing.TYPE_CHECKING:
+#    import kvui
 
 logger = logging.getLogger("Client")
 
