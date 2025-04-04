@@ -1,4 +1,12 @@
 connection:
   server: localhost:38281
   player: Player1
-  password: none
+  password: noneoutput_options:
+  output_file: "output.txt" # write `false` without quotes if you want to disable text file output
+  completed_events: [] # event names should exactly match how they are written in output
+  show_events: true # if true, locations that depend on an event are printed after said event;
+  # if false, all events in logic are silently collected, and locations are all sorted together and
+  # only separated based on region, if applicable. Goal is always printed.
+  show_regions: true # if true, locations are sorted based on region, and regions are printed before
+  # the locations that belong to it; if false, all locations are sorted together and only separated
+  # based on events, if applicable

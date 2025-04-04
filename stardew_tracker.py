@@ -448,36 +448,22 @@ def build_map_for_sorting(multiworld: MultiWorld) -> MappingProxyType[str, typin
     return MappingProxyType(region_name_to_parent_name_mutable)
 
 
-def main():
-    with open("stardew_tracker_options.yaml", "r") as document:
-        yaml_data = yaml.load(document, Loader)
-        address = yaml_data["connection"]["server"]
-        if "://" not in address:
-            address = f"ws://{address}"
-    username = yaml_data["connection"]["player"]
-    password = yaml_data["connection"]["password"]
+# https://stackoverflow.com/a/16090640
+# https://creativecommons.org/licenses/by-sa/3.0/
+def natural_sort_key(s, _nsre=re.compile(r'(\d+)')):
+    return [int(text) if text.isdigit() else text.lower()
+            for text in _nsre.split(s)]
 
-    connect_and_fill_swdata(address, username, password)
 
-    # https://stackoverflow.com/a/16090640
-    # https://creativecommons.org/licenses/by-sa/3.0/
-    def natural_sort_key(s, _nsre=re.compile(r'(\d+)')):
-        return [int(text) if text.isdigit() else text.lower()
-                for text in _nsre.split(s)]
+def loc_alphabetical_sort_key(loc: StardewLocation):
+    return loc.name
 
-    def loc_alphabetical_sort_key(loc: StardewLocation):
-        return loc.name
 
-    def loc_natural_sort_key(loc: StardewLocation):
-        return natural_sort_key(loc.name)
+def loc_natural_sort_key(loc: StardewLocation):
+    return natural_sort_key(loc.name)
 
-    def loc_type_sort_key(loc: StardewLocation):
-        return 1 if loc.event else 0
 
-    def event_sort_key(event: StardewLocation):
-        return [event.parent_region.name, event.name]
-
-    multiworld = create_multiworld()
+def output_with_regions(multiworld: MultiWorld, output_options: typing.Dict[str, typing.Union[bool | str]]):
 
     region_name_to_parent_name = build_map_for_sorting(multiworld)
 
@@ -492,6 +478,41 @@ def main():
             region_name = _region_name_to_parent_name[region_name][0]
         return lst
 
+    def event_with_region_sort_key(event: StardewLocation, _region_name_to_parent_name: MappingProxyType[str,
+                              typing.Tuple[typing.Optional[str], int]] =
+                              region_name_to_parent_name):
+        _region = event.parent_region
+        region_name = _region.name
+        lst = [event.name]
+        while region_name is not None:
+            lst.insert(0, region_name)
+            region_name = _region_name_to_parent_name[region_name][0]
+        return lst
+
+    def extract_accessible_locations(mw: MultiWorld,
+                                     locs_per_region: typing.List[typing.Tuple[Region, typing.List[StardewLocation]]]):
+        output_region_to_locations: typing.Dict[str, typing.List[str]] = {}
+        output_regions: typing.List[str] = []
+        for _tuple in locs_per_region[:]:
+            region = _tuple[0]
+            if len(_tuple[1]) == 0:
+                locs_per_region.remove(_tuple)
+                continue
+            if not region.can_reach(mw.state):
+                continue
+            if region.name not in output_region_to_locations.keys():
+                output_region_to_locations[region.name] = []
+            locs = _tuple[1]
+            for loc in locs:
+                if loc.can_reach(mw.state):
+                    output_region_to_locations[region.name].append(loc.name)
+            if len(output_region_to_locations[region.name]) > 0:
+                output_regions.append(region.name)
+                locs[:] = (loc for loc in locs if loc.name not in output_region_to_locations[region.name])
+            if len(locs) == 0:
+                locs_per_region.remove(_tuple)
+        return output_regions, output_region_to_locations
+
     locations_to_check_per_region: typing.List[typing.Tuple[Region, typing.List[StardewLocation]]] = []
     event_location_list: typing.List[StardewLocation] = []
     for region in multiworld.regions:
@@ -505,13 +526,32 @@ def main():
             locations_to_check_per_region.append((region, location_list))
         location_list.sort(key=loc_alphabetical_sort_key)
         location_list.sort(key=loc_natural_sort_key)
-        location_list.sort(key=loc_type_sort_key)
     locations_to_check_per_region.sort(key=tuple_region_sort_key)
     goal_names = [ev.name for ev in events_locations]
     goal: StardewLocation = next(filter(lambda loc: loc.name in goal_names, event_location_list))
     event_location_list.remove(goal)
-    event_location_list.sort(key=event_sort_key)
-
+    completed_events = set(output_options["completed_events"])
+    for event in event_location_list[:]:
+        if event.name in completed_events:
+            event_location_list.remove(event)
+            multiworld.push_precollected(event.item)
+    if output_options["output_file"]:
+        file = open(output_options["output_file"], "w")
+    else:
+        file = None
+    if output_options["show_events"]:
+        event_location_list.sort(key=event_with_region_sort_key)
+    else:
+        while True:
+            accessible_event_loc = None
+            for event in event_location_list:
+                if event.can_reach(multiworld.state):
+                    accessible_event_loc = event
+                    break
+            if accessible_event_loc is None:
+                break
+            event_location_list.remove(accessible_event_loc)
+            multiworld.push_precollected(accessible_event_loc.item)
     print()
     just_fix_windows_console()
     while True:
@@ -519,7 +559,12 @@ def main():
         out_region_names, out_region_to_locations = extract_accessible_locations(multiworld,
                                                                                  locations_to_check_per_region)
         for reg in out_region_names:
-            print(f"{Fore.BLACK}{Back.WHITE}Region: {reg}{Style.RESET_ALL}")
+            _str = f"[Region: {reg}]"
+            if output_options["output_file"]:
+                file.write(_str + "\n")
+            print(f"{Fore.BLACK}{Back.WHITE}{_str}{Style.RESET_ALL}")
+            if output_options["output_file"]:
+                file.writelines([elem + "\n" for elem in out_region_to_locations[reg]])
             for loc in out_region_to_locations[reg]:
                 print(loc)
         for event in event_location_list:
@@ -530,34 +575,138 @@ def main():
             break
         event_location_list.remove(accessible_event_loc)
         multiworld.push_precollected(accessible_event_loc.item)
-        print(f"{Fore.BLACK}{Back.BLUE}{Back.LIGHTBLACK_EX}[Event: {accessible_event_loc.name}]{Style.RESET_ALL}")
+        _str = f"[[Region: {accessible_event_loc.parent_region.name}; Event: {accessible_event_loc.name}]]"
+        if output_options["output_file"]:
+            file.write(_str + "\n")
+        print(f"{Fore.BLACK}{Back.YELLOW}{_str}{Style.RESET_ALL}")
     is_goal_accessible = goal.can_reach(multiworld.state)
-    print(f"{Fore.BLACK}{Back.BLUE}{Back.LIGHTBLACK_EX}[Goal: {goal.name}, is {'' if is_goal_accessible else 'not '}" +
-          f"accessible]{Style.RESET_ALL}")
+    _str = f"[Goal: {goal.name}, is {'' if is_goal_accessible else 'not '}accessible]"
+    if output_options["output_file"]:
+        file.write(_str + "\n")
+    print(f"{Fore.BLACK}{Back.YELLOW}{_str}{Style.RESET_ALL}")
+    if output_options["output_file"]:
+        file.close()
 
 
-def extract_accessible_locations(mw: MultiWorld, locs_per_region: typing.List[typing.Tuple[Region, typing.List[StardewLocation]]]):
-    output_region_to_locations: typing.Dict[str, typing.List[str]] = {}
-    output_regions: typing.List[str] = []
-    for _tuple in locs_per_region[:]:
-        region = _tuple[0]
-        if len(_tuple[1]) == 0:
-            locs_per_region.remove(_tuple)
-            continue
-        if not region.can_reach(mw.state):
-            continue
-        if region.name not in output_region_to_locations.keys():
-            output_region_to_locations[region.name] = []
-        locs = _tuple[1]
-        for loc in locs:
-            if loc.can_reach(mw.state):
-                output_region_to_locations[region.name].append(loc.name)
-        if len(output_region_to_locations[region.name]) > 0:
-            output_regions.append(region.name)
-            locs[:] = (loc for loc in locs if loc.name not in output_region_to_locations[region.name])
-        if len(locs) == 0:
-            locs_per_region.remove(_tuple)
-    return output_regions, output_region_to_locations
+def output_without_regions(multiworld: MultiWorld, output_options:
+                           typing.Dict[str, typing.Union[bool | str | typing.List[str]]]):
+    def extract_accessible_locations(mw: MultiWorld, locs_to_check: typing.List[StardewLocation]):
+        out_locs: typing.List[str] = []
+        for _loc in locs_to_check[:]:
+            if _loc.can_reach(mw.state):
+                out_locs.append(_loc.name)
+                locs_to_check.remove(_loc)
+        return out_locs
+
+    locations_to_check: typing.List[StardewLocation] = []
+    event_location_list: typing.List[StardewLocation] = []
+
+    for location in multiworld.get_locations(1):
+        if not location.event and location.name in SWData.missing_location_names:
+            locations_to_check.append(location)
+        elif location.event:
+            event_location_list.append(location)
+    locations_to_check.sort(key=loc_alphabetical_sort_key)
+    locations_to_check.sort(key=loc_natural_sort_key)
+    goal_names = [ev.name for ev in events_locations]
+    goal: StardewLocation = next(filter(lambda loc: loc.name in goal_names, event_location_list))
+    event_location_list.remove(goal)
+    completed_events = set(output_options["completed_events"])
+    for event in event_location_list[:]:
+        if event.name in completed_events:
+            event_location_list.remove(event)
+            multiworld.push_precollected(event.item)
+    if output_options["output_file"]:
+        file = open(output_options["output_file"], "w")
+    else:
+        file = None
+    if output_options["show_events"]:
+        event_location_list.sort(key=loc_alphabetical_sort_key)
+    else:
+        while True:
+            accessible_event_loc = None
+            for event in event_location_list:
+                if event.can_reach(multiworld.state):
+                    accessible_event_loc = event
+                    break
+            if accessible_event_loc is None:
+                break
+            event_location_list.remove(accessible_event_loc)
+            multiworld.push_precollected(accessible_event_loc.item)
+    print()
+    just_fix_windows_console()
+    while True:
+        accessible_event_loc = None
+        out_locations = extract_accessible_locations(multiworld, locations_to_check)
+
+        if output_options["output_file"]:
+            file.writelines([elem + "\n" for elem in out_locations])
+        for loc in out_locations:
+            print(loc)
+        for event in event_location_list:
+            if event.can_reach(multiworld.state):
+                accessible_event_loc = event
+                break
+        if accessible_event_loc is None:
+            break
+        event_location_list.remove(accessible_event_loc)
+        multiworld.push_precollected(accessible_event_loc.item)
+        _str = f"[Event: {accessible_event_loc.name}]"
+        if output_options["output_file"]:
+            file.write(_str + "\n")
+        print(f"{Fore.BLACK}{Back.YELLOW}{_str}{Style.RESET_ALL}")
+    is_goal_accessible = goal.can_reach(multiworld.state)
+    _str = f"[Goal: {goal.name}, is {'' if is_goal_accessible else 'not '}accessible]"
+    if output_options["output_file"]:
+        file.write(_str + "\n")
+    print(f"{Fore.BLACK}{Back.YELLOW}{_str}{Style.RESET_ALL}")
+    if output_options["output_file"]:
+        file.close()
+
+
+def main():
+    with open("stardew_tracker_options.yaml", "r") as document:
+        yaml_data = yaml.load(document, Loader)
+    address = yaml_data["connection"]["server"]
+    if "://" not in address:
+        address = f"ws://{address}"
+    username = yaml_data["connection"]["player"]
+    password = yaml_data["connection"]["password"]
+
+    output_options = yaml_data["output_options"]
+    if type(output_options["output_file"]) is not str and type(output_options["output_file"]) is not bool:
+        output_options["output_file"] = False
+    if type(output_options["output_file"]) is bool and output_options["output_file"]:
+        output_options["output_file"] = "output.txt"
+    if type(output_options["show_events"]) is str:
+        if output_options["show_events"].lower() == "true":
+            output_options["show_events"] = True
+        elif output_options["show_events"].lower() == "false":
+            output_options["show_events"] = False
+        else:
+            print_with_linebreak("[ERROR]: Option `show_events` must be a boolean (true or false)")
+            exit(1)
+    elif type(output_options["show_events"]) is not bool:
+        print_with_linebreak("[ERROR]: Option `show_events` must be a boolean (true or false)")
+        exit(1)
+    if type(output_options["show_regions"]) is str:
+        if output_options["show_regions"].lower() == "true":
+            output_options["show_regions"] = True
+        elif output_options["show_regions"].lower() == "false":
+            output_options["show_regions"] = False
+        else:
+            print_with_linebreak("[ERROR]: Option `show_regions` must be a boolean (true or false)")
+            exit(1)
+    elif type(output_options["show_regions"]) is not bool:
+        print_with_linebreak("[ERROR]: Option `show_regions` must be a boolean (true or false)")
+        exit(1)
+
+    connect_and_fill_swdata(address, username, password)
+    multiworld = create_multiworld()
+    if output_options["show_regions"]:
+        output_with_regions(multiworld, output_options)
+    else:
+        output_without_regions(multiworld, output_options)
 
 
 if __name__ == '__main__':
