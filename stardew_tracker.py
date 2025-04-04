@@ -323,7 +323,7 @@ class SWData:
 
 
 def main():
-    with open("stardew_extra_data.yaml", "r") as document:
+    with open("stardew_tracker_options.yaml", "r") as document:
         yaml_data = yaml.load(document, Loader)
         address = yaml_data["connection"]["server"]
         if "://" not in address:
