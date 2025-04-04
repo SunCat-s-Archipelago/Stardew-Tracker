@@ -697,10 +697,10 @@ def messagebox(title: str, text: str, error: bool = False) -> None:
             return App.get_running_app() is not None
         return False
 
-    if is_kivy_running():
-        from kvui import MessageBox
-        MessageBox(title, text, error).open()
-        return
+    #if is_kivy_running():
+    #    from kvui import MessageBox
+    #    MessageBox(title, text, error).open()
+    #    return
 
     if is_linux and "tkinter" not in sys.modules:
         # prefer native dialog
