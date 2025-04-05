@@ -10,6 +10,7 @@ import websockets
 import ssl
 from types import MappingProxyType
 from colorama import just_fix_windows_console, Style, Fore, Back
+import atexit
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -678,6 +679,9 @@ def main():
         output_options["output_file"] = False
     if type(output_options["output_file"]) is bool and output_options["output_file"]:
         output_options["output_file"] = "output.txt"
+    if type(output_options["completed_events"]) is not list:
+        print()
+        sys.exit("[ERROR] Option `completed_events` must be a list")
     if type(output_options["show_events"]) is str:
         if output_options["show_events"].lower() == "true":
             output_options["show_events"] = True
@@ -709,7 +713,12 @@ def main():
         output_without_regions(multiworld, output_options)
 
 
+def exit_handler():
+    print("Press Enter to close the program")
+    input()
+
+
+atexit.register(exit_handler)
+
 if __name__ == '__main__':
     main()
-    print("Press Enter to finish running the program")
-    input()
