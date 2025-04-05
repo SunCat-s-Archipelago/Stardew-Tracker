@@ -427,7 +427,6 @@ cx_Freeze.setup(
     version=f"{version_tuple.major}.{version_tuple.minor}.{version_tuple.build}",
     description="Archipelago",
     executables=exes,
-    ext_modules=cythonize("_speedups.pyx"),
     options={
         "build_exe": {
             "packages": ["worlds", "websockets"],

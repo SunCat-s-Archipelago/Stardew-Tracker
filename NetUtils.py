@@ -423,6 +423,6 @@ else:
         try:
             from _speedups import LocationStore
         except ImportError:
-            warnings.warn("_speedups not available. Falling back to pure python LocationStore. "
-                          "Install a matching C++ compiler for your platform to compile _speedups.")
+            #warnings.warn("_speedups not available. Falling back to pure python LocationStore. "
+            #              "Install a matching C++ compiler for your platform to compile _speedups.")
             LocationStore = _LocationStore
