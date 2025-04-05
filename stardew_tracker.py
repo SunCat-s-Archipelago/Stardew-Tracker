@@ -1,6 +1,7 @@
 import asyncio
 import random
 import re
+import sys
 import typing
 import urllib.parse
 from argparse import Namespace
@@ -184,7 +185,6 @@ async def process_server_cmd(ctx, args: dict):
 
 async def server_loop(ctx: ConnectionContext):
     server_url = urllib.parse.urlparse(ctx.server_address)
-    print(f'Connecting to Archipelago server at {ctx.server_address}')
     try:
         port = server_url.port or 38281  # raises ValueError if invalid
         socket = await websockets.connect(ctx.server_address, port=port, ping_timeout=None, ping_interval=None,
@@ -330,7 +330,7 @@ def connect_and_fill_swdata(address, username, password):
     with ConnectionContext(address, username, password) as ctx:
         asyncio.run(server_loop(ctx))
         if not ctx.watcher_event.is_set():
-            exit(1)
+            sys.exit("[ERROR] Data was not retrieved due to failed connection")
         SWData.slot_data = ctx.slot_data
         for name, _id in StardewValleyWorld.location_name_to_id.items():
             if _id in ctx.missing_locations:
@@ -684,22 +684,22 @@ def main():
         elif output_options["show_events"].lower() == "false":
             output_options["show_events"] = False
         else:
-            print_with_linebreak("[ERROR]: Option `show_events` must be a boolean (true or false)")
-            exit(1)
+            print()
+            sys.exit("[ERROR] Option `show_events` must be a boolean (true or false)")
     elif type(output_options["show_events"]) is not bool:
-        print_with_linebreak("[ERROR]: Option `show_events` must be a boolean (true or false)")
-        exit(1)
+        print()
+        sys.exit("[ERROR] Option `show_events` must be a boolean (true or false)")
     if type(output_options["show_regions"]) is str:
         if output_options["show_regions"].lower() == "true":
             output_options["show_regions"] = True
         elif output_options["show_regions"].lower() == "false":
             output_options["show_regions"] = False
         else:
-            print_with_linebreak("[ERROR]: Option `show_regions` must be a boolean (true or false)")
-            exit(1)
+            print()
+            sys.exit("[ERROR] Option `show_regions` must be a boolean (true or false)")
     elif type(output_options["show_regions"]) is not bool:
-        print_with_linebreak("[ERROR]: Option `show_regions` must be a boolean (true or false)")
-        exit(1)
+        print()
+        sys.exit("[ERROR] Option `show_regions` must be a boolean (true or false)")
 
     connect_and_fill_swdata(address, username, password)
     multiworld = create_multiworld()
