@@ -423,9 +423,9 @@ def find_libs(*args: str) -> typing.Sequence[typing.Tuple[str, str]]:
 
 
 cx_Freeze.setup(
-    name="Archipelago",
-    version=f"{version_tuple.major}.{version_tuple.minor}.{version_tuple.build}",
-    description="Archipelago",
+    name="Archipelago Stardew Valley 1.5.x Tracker",
+    version=f"1.0.1",
+    description="Archipelago Stardew Valley 1.5.x Tracker",
     executables=exes,
     options={
         "build_exe": {
