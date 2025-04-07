@@ -456,12 +456,22 @@ def natural_sort_key(s, _nsre=re.compile(r'(\d+)')):
             for text in _nsre.split(s)]
 
 
+# makes sure levels of the same skill are together
+def natural_sort_key_with_exceptions(s, _nsre=re.compile(r'(\d+)')):
+    lst = [int(text) if text.isdigit() else text.lower()
+            for text in _nsre.split(s)]
+    if lst[0] in ["level ", "monster eradication: "]:
+        end = lst.pop()
+        lst.insert(1, end)
+    return lst
+
+
 def loc_alphabetical_sort_key(loc: StardewLocation):
     return loc.name
 
 
 def loc_natural_sort_key(loc: StardewLocation):
-    return natural_sort_key(loc.name)
+    return natural_sort_key_with_exceptions(loc.name)
 
 
 def output_with_regions(multiworld: MultiWorld, output_options: typing.Dict[str, typing.Union[bool | str]]):
