@@ -57,7 +57,6 @@ if __name__ == "__main__":
     #ModuleUpdate.update(yes="--yes" in sys.argv or "-y" in sys.argv)
 
 from Utils import version_tuple, is_windows, is_linux
-from Cython.Build import cythonize
 
 
 signtool: typing.Optional[str]
