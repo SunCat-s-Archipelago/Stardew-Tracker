@@ -62,7 +62,7 @@ class ConnectionContext:
     server_address: typing.Optional[str]
     password: typing.Optional[str]
     watcher_event: asyncio.Event
-    items_received: typing.Set[int]
+    items_received: typing.List[int]
     missing_locations: typing.Set[int]
     slot_data: typing.Dict[str, typing.Any]
 
@@ -71,7 +71,7 @@ class ConnectionContext:
         self.username = username
         self.password = password
         self.watcher_event = asyncio.Event()
-        self.items_received = set()
+        self.items_received = list()
         self.missing_locations = set()  # server state
         self.checked_locations = set()  # server state
         self.server_locations = set()  # all locations the server knows of, missing_location | checked_locations
@@ -171,14 +171,14 @@ async def process_server_cmd(ctx, args: dict):
         start_index = args["index"]
 
         if start_index == 0:
-            ctx.items_received = set()
+            ctx.items_received = list()
             ctx.watcher_event.set()
         elif start_index != len(ctx.items_received):
             sync_msg = [{'cmd': 'Sync'}]
             await ctx.send_msgs(sync_msg)
         if start_index == len(ctx.items_received):
             for item in args['items']:
-                ctx.items_received.add(item.item)
+                ctx.items_received.append(item.item)
             ctx.watcher_event.set()
         if ctx.watcher_event.is_set():
             await ctx.disconnect()
@@ -340,7 +340,7 @@ def connect_and_fill_swdata(address, username, password):
             elif _id in ctx.server_locations:
                 SWData.server_location_names.add(name)
         for name, _id in StardewValleyWorld.item_name_to_id.items():
-            if _id in ctx.items_received:
+            for i in range(ctx.items_received.count(_id)):
                 SWData.items_received.append(name)
 
 
