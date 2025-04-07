@@ -423,7 +423,7 @@ def find_libs(*args: str) -> typing.Sequence[typing.Tuple[str, str]]:
 
 cx_Freeze.setup(
     name="Archipelago Stardew Valley 1.5.x Tracker",
-    version=f"1.0.2",
+    version=f"1.0.3",
     description="Archipelago Stardew Valley 1.5.x Tracker",
     executables=exes,
     options={
