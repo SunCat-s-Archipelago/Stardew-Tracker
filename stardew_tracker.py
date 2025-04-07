@@ -324,7 +324,7 @@ class SWData:
     slot_data: typing.Dict[str, typing.Any] = {}
     missing_location_names: typing.Set[str] = set()
     server_location_names: typing.Set[str] = set()
-    items_received: typing.Set[str] = set()
+    items_received: typing.List[str] = list()
 
 
 def connect_and_fill_swdata(address, username, password):
@@ -341,7 +341,7 @@ def connect_and_fill_swdata(address, username, password):
                 SWData.server_location_names.add(name)
         for name, _id in StardewValleyWorld.item_name_to_id.items():
             if _id in ctx.items_received:
-                SWData.items_received.add(name)
+                SWData.items_received.append(name)
 
 
 def create_items(sw: StardewValleyWorld):
