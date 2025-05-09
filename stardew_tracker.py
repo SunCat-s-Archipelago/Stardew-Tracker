@@ -420,7 +420,6 @@ def create_multiworld():
     start_inventory = []
     for item_name in SWData.items_received:
         item = sw_world.create_starting_item(item_name)
-        prog_items = multiworld.state.prog_items[1]
         if item.advancement:
             start_inventory.append(item)
             sw_world.total_progression_items += 1
