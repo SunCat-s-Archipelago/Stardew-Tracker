@@ -5,7 +5,7 @@ import sys
 import typing
 import urllib.parse
 from argparse import Namespace
-from typing import Optional
+from typing import Optional, Counter
 import websockets
 import ssl
 from types import MappingProxyType
@@ -19,7 +19,7 @@ except ImportError:
 import yaml
 
 import Utils
-from BaseClasses import MultiWorld, CollectionState, Entrance, Region, Item
+from BaseClasses import MultiWorld, CollectionState, Entrance, Region, Item, ItemClassification
 from NetUtils import (Endpoint, decode, encode)
 from Utils import Version
 from worlds.stardew_valley import StardewValleyWorld, StardewLogic, StardewLocation, BundleRoom, set_rules, item_table, \
@@ -34,7 +34,8 @@ from worlds.stardew_valley.options import StardewValleyOptions, EntranceRandomiz
 from worlds.stardew_valley.region_classes import ConnectionData, RandomizationFlag
 from worlds.stardew_valley.regions import RegionFactory, create_final_connections_and_regions, \
     remove_excluded_entrances, create_connections_for_generation, add_non_randomized_connections
-from worlds.stardew_valley.items import StardewItemFactory, StardewItemDeleter, remove_items, create_unique_items
+from worlds.stardew_valley.items import StardewItemFactory, StardewItemDeleter, remove_items, create_unique_items, \
+    ItemData
 
 
 def print_with_linebreak(msg: str) -> None:
@@ -325,6 +326,9 @@ class SWData:
     missing_location_names: typing.Set[str] = set()
     server_location_names: typing.Set[str] = set()
     items_received: typing.List[str] = list()
+    progression_skip_balancing_collected_count: int = 0
+    progression_skip_balancing_item_counts: Counter[str] = Counter[str]()
+    not_progression: typing.List[Item] = list()
 
 
 def connect_and_fill_swdata(address, username, password):
@@ -344,14 +348,24 @@ def connect_and_fill_swdata(address, username, password):
                 SWData.items_received.append(name)
 
 
-def create_items(sw: StardewValleyWorld):
-    items_to_exclude = sw.multiworld.precollected_items[sw.player]
+def create_items(sw: StardewValleyWorld, items_to_exclude: typing.List[Item]):
     if sw.options.season_randomization == SeasonRandomization.option_disabled:
         items_to_exclude = [item for item in items_to_exclude
                             if item_table[item.name] not in items_by_group[Group.SEASON]]
 
+    def custom_create_item(item: typing.Union[str, ItemData], override_classification: ItemClassification = None):
+        new_item = sw.create_item(item, override_classification)
+        base_item = item_table[item] if type(item) is str else item
+        if override_classification == ItemClassification.progression_skip_balancing:
+            SWData.progression_skip_balancing_item_counts.setdefault(new_item.name, 0)
+            SWData.progression_skip_balancing_item_counts[new_item.name] += 1
+        if base_item.classification & ItemClassification.progression and not new_item.advancement:
+            SWData.not_progression.append(new_item)
+        return new_item
+
     def create_items(item_factory: StardewItemFactory, item_deleter: StardewItemDeleter,
-                     items_to_exclude: typing.List[Item], options: StardewValleyOptions, random: random.Random) -> typing.List[Item]:
+                     items_to_exclude: typing.List[Item], options: StardewValleyOptions, random: random.Random) -> \
+    typing.List[Item]:
         unique_items = create_unique_items(item_factory, options, random)
         babies_to_exclude = list(filter(lambda item: item.name in [
             _item.name for _item in items_by_group[Group.BABY]
@@ -368,11 +382,17 @@ def create_items(sw: StardewValleyWorld):
             item_deleter(baby)
         return unique_items
 
-    created_items = create_items(sw.create_item, sw.delete_item, items_to_exclude, sw.options, sw.random)
+    created_items = create_items(custom_create_item, sw.delete_item, items_to_exclude, sw.options, sw.random)
 
     sw.multiworld.itempool += created_items
     sw.setup_player_events()
     sw.setup_victory()
+
+    for item, count in SWData.progression_skip_balancing_item_counts.items():
+        state_item_count = 0
+        if item in sw.multiworld.state.prog_items[1].keys():
+            state_item_count = sw.multiworld.state.prog_items[1][item]
+        SWData.progression_skip_balancing_collected_count += min(state_item_count, count)
 
 
 def create_multiworld():
@@ -397,11 +417,24 @@ def create_multiworld():
     create_regions(sw_world, SWData.slot_data["modified_bundles"], SWData.server_location_names)
 
     # treat server inventory as starting inventory
+    start_inventory = []
     for item_name in SWData.items_received:
         item = sw_world.create_starting_item(item_name)
+        prog_items = multiworld.state.prog_items[1]
         if item.advancement:
-            multiworld.push_precollected(item)
-    create_items(sw_world)
+            start_inventory.append(item)
+            sw_world.total_progression_items += 1
+
+    create_items(sw_world, start_inventory)
+
+    # filter out items that became not progression
+    for item in SWData.not_progression:
+        start_item = next(filter(lambda it: it == item, start_inventory), None)
+        if start_item is not None:
+            start_inventory.remove(start_item)
+    # actually add items to start inventory
+    for item in start_inventory:
+        multiworld.push_precollected(item)
 
     set_rules(sw_world)
 
@@ -459,7 +492,7 @@ def natural_sort_key(s, _nsre=re.compile(r'(\d+)')):
 # makes sure levels of the same skill are together
 def natural_sort_key_with_exceptions(s, _nsre=re.compile(r'(\d+)')):
     lst = [int(text) if text.isdigit() else text.lower()
-            for text in _nsre.split(s)]
+           for text in _nsre.split(s)]
     if lst[0] in ["level ", "monster eradication: "]:
         end = lst.pop()
         lst.insert(1, end)
@@ -475,12 +508,11 @@ def loc_natural_sort_key(loc: StardewLocation):
 
 
 def output_with_regions(multiworld: MultiWorld, output_options: typing.Dict[str, typing.Union[bool | str]]):
-
     region_name_to_parent_name = build_map_for_sorting(multiworld)
 
     def tuple_region_sort_key(t: typing.Tuple[Region, typing.Any], _region_name_to_parent_name: MappingProxyType[str,
-                              typing.Tuple[typing.Optional[str], int]] =
-                              region_name_to_parent_name):
+    typing.Tuple[typing.Optional[str], int]] =
+    region_name_to_parent_name):
         _region = t[0]
         region_name = _region.name
         lst = []
@@ -490,8 +522,8 @@ def output_with_regions(multiworld: MultiWorld, output_options: typing.Dict[str,
         return lst
 
     def event_with_region_sort_key(event: StardewLocation, _region_name_to_parent_name: MappingProxyType[str,
-                              typing.Tuple[typing.Optional[str], int]] =
-                              region_name_to_parent_name):
+    typing.Tuple[typing.Optional[str], int]] =
+    region_name_to_parent_name):
         _region = event.parent_region
         region_name = _region.name
         lst = [event.name]
@@ -590,13 +622,7 @@ def output_with_regions(multiworld: MultiWorld, output_options: typing.Dict[str,
         if output_options["output_file"]:
             file.write(_str + "\n")
         print(f"{Fore.BLACK}{Back.YELLOW}{_str}{Style.RESET_ALL}")
-    is_goal_accessible = goal.can_reach(multiworld.state)
-    _str = f"[Goal: {goal.name}, is {'' if is_goal_accessible else 'not '}accessible]"
-    if output_options["output_file"]:
-        file.write(_str + "\n")
-    print(f"{Fore.BLACK}{Back.YELLOW}{_str}{Style.RESET_ALL}")
-    if output_options["output_file"]:
-        file.close()
+    shared_ending(file, multiworld, goal, output_options)
 
 
 def output_without_regions(multiworld: MultiWorld, output_options:
@@ -666,11 +692,30 @@ def output_without_regions(multiworld: MultiWorld, output_options:
         if output_options["output_file"]:
             file.write(_str + "\n")
         print(f"{Fore.BLACK}{Back.YELLOW}{_str}{Style.RESET_ALL}")
+    shared_ending(file, multiworld, goal, output_options)
+
+
+def shared_ending(file: typing.TextIO, multiworld: MultiWorld, goal: StardewLocation, output_options:
+                  typing.Dict[str, typing.Union[bool | str | typing.List[str]]]):
     is_goal_accessible = goal.can_reach(multiworld.state)
-    _str = f"[Goal: {goal.name}, is {'' if is_goal_accessible else 'not '}accessible]"
+    _str = f"[Goal: {goal.name}, is {'' if is_goal_accessible else 'not '}in logic]"
     if output_options["output_file"]:
         file.write(_str + "\n")
     print(f"{Fore.BLACK}{Back.YELLOW}{_str}{Style.RESET_ALL}")
+    _str = (f"Progression skip balancing items: {SWData.progression_skip_balancing_collected_count} collected out of " +
+            f"{SWData.progression_skip_balancing_item_counts.total()} total")
+    if output_options["output_file"]:
+        file.write(_str + "\n")
+    print(_str)
+    _str = ("Logic rules and goals that rely on progression item counts ignore progression_skip_balancing items, "
+            "which are:")
+    if output_options["output_file"]:
+        file.write(_str + "\n")
+    print(_str)
+    _str = str(list(SWData.progression_skip_balancing_item_counts.keys()))
+    if output_options["output_file"]:
+        file.write(_str + "\n")
+    print(_str)
     if output_options["output_file"]:
         file.close()
 
